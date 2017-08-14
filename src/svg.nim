@@ -53,14 +53,10 @@ proc buildSvgProc(body: NimNode, level: int): NimNode =
     nodes.add(tmp)
     tmp.children = childrenArg
 
-  # `elements` will be a stmt list of `appendElement` ASTs
-  # var elements = newNimNode(nnkStmtList)
-
-  #echo "body.kind: ", body.kind
-  #for n in body:
   let n = copyNimTree(body)
-  echo level, " ", n.kind
+  # echo level, " ", n.kind
   # echo n.treeRepr
+
   case n.kind
   of nnkCallKinds:
     let tag = newStrLitNode($(n[0]))
@@ -81,42 +77,25 @@ proc buildSvgProc(body: NimNode, level: int): NimNode =
       nnkOfBranch, nnkElifBranch, nnkExceptBranch, nnkElse,
       nnkConstDef, nnkWhileStmt, nnkIdentDefs, nnkVarTuple:
     # recurse for the last son:
-    #[
-    let subtree = copyNimTree(n)
-    echo "before: ", subtree.treerepr
-    let L = n.len
-    if L > 0:
-      subtree[L-1] = buildSvgProc(subtree[L-1], level+1)
-    echo "after: ", subtree.treerepr
-    result.add(subtree)
-    ]#
     result = copyNimTree(n)
     let L = n.len
     if L > 0:
       result[L-1] = buildSvgProc(result[L-1], level+1)
 
-  of nnkIfStmt, nnkStmtList: #, nnkStmtListExpr, nnkWhenStmt, nnkIfStmt, nnkTryStmt, nnkFinally:
+  of nnkStmtList, nnkStmtListExpr, nnkWhenStmt, nnkIfStmt, nnkTryStmt,
+      nnkFinally:
+    # recurse for every child:
     result = copyNimNode(n)
     for x in n:
       result.add buildSvgProc(x, level+1)
-    # recurse for every child:
-    #[
-    echo "before: ", n.treeRepr
-    let subtree = copyNimTree(n)
-    for i in 0 ..< subtree.len:
-      subtree[i] = buildSvgProc(subtree[i], level+1)
-    echo "after: ", subtree.treeRepr
-    result.add(buildSvgProc(subtree, level+1))
-    ]#
 
-  #[
   of nnkCaseStmt:
     # recurse for children, but don't add call for case ident
     result = copyNimNode(n)
     result.add n[0]
     for i in 1 ..< n.len:
-      result.add tcall2(n[i], tmpContext)
-  ]#
+      result.add buildSvgProc(n[i], level+1)
+
   else:
     error "Unknown node kind: " & $n.kind & "\n" & n.repr
 
@@ -219,5 +198,23 @@ when isMainModule:
         newNode("c"),
         newNode("d"),
         newNode("c"),
+      ]
+      verify(svg, exp)
+
+    test "Case":
+      let x = 1
+      let svg = buildSvg:
+        g():
+          case x
+          of 0:
+            a()
+          of 1:
+            b()
+          else:
+            c()
+      let exp = @[
+        newNode("g", @[
+          newNode("b"),
+        ]),
       ]
       verify(svg, exp)
