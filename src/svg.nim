@@ -27,21 +27,15 @@ proc `$`(nodes: Nodes): string =
     result &= n.prettyString(0)
 
 
-proc buildSvgProc(body: NimNode): NimNode =
+proc buildSvgProc(body: NimNode, level: int): NimNode =
 
-  template buildElement(tmp, tag, sub) {.dirty.} =
+  template appendElement(tmp, tag, childrenArg) {.dirty.} =
     let tmp = newNode(tag)
     nodes.add(tmp)
-    tmp.children = sub
+    tmp.children = childrenArg
 
-  template resultTemplate(elementBuilder) =
-    block:
-      var nodes = newSeq[Node]()
-      elementBuilder
-      nodes
-
-  var stmts = newNimNode(nnkStmtList)
-  echo stmts.treeRepr
+  # `elements` will be a stmt list of `appendElement` ASTs
+  var elements = newNimNode(nnkStmtList)
 
   for n in body:
     echo n.treeRepr
@@ -49,44 +43,78 @@ proc buildSvgProc(body: NimNode): NimNode =
     of nnkCallKinds:
       let tag = newStrLitNode($(n[0]))
       let tmp = genSym(nskLet, "tmp")
-      let sub =
-        if n.len >= 2:
-          buildSvgProc(n[1])
+      # if the last element is an nnkStmtList (block argument) => recursion for children.
+      let children =
+        if n.len >= 2 and n[^1].kind == nnkStmtList:
+          buildSvgProc(n[^1], level+1)
         else:
           newNimNode(nnkEmpty)
-      #echo tmp.treeRepr
-      #echo tmp.name
-      #echo tmp
-      stmts.add(getAst(buildElement(tmp, tag, sub)))
-      #stmts.add(newLetStmt(tmp, newCall(bindsym"newNode", tag)))
-      #stmts.add(newCall("add", ))
-    else:
-      discard
+      elements.add(getAst(appendElement(tmp, tag, children)))
+    of nnkIdent:
+      let tag = newStrLitNode($n)
+      let tmp = genSym(nskLet, "tmp")
+      elements.add(getAst(appendElement(tmp, tag, newEmptyNode())))
 
-  echo stmts.treeRepr
-  echo stmts.repr
-  result = stmts
+    of nnkForStmt, nnkIfExpr, nnkElifExpr, nnkElseExpr,
+        nnkOfBranch, nnkElifBranch, nnkExceptBranch, nnkElse,
+        nnkConstDef, nnkWhileStmt, nnkIdentDefs, nnkVarTuple:
+      # recurse for the last son:
+      let subtree = copyNimTree(n)
+      let L = n.len
+      if L > 0:
+        subtree[L-1] = buildSvgProc(subtree[L-1], level+1)
+      elements.add(subtree)
+    #[
+    of nnkStmtList, nnkStmtListExpr, nnkWhenStmt, nnkIfStmt, nnkTryStmt,
+      nnkFinally:
+      # recurse for every child:
+      result = copyNimNode(n)
+      for x in n:
+        result.add tcall2(x, tmpContext)
+    of nnkCaseStmt:
+      # recurse for children, but don't add call for case ident
+      result = copyNimNode(n)
+      result.add n[0]
+      for i in 1 ..< n.len:
+        result.add tcall2(n[i], tmpContext)
+    ]#
+    else:
+      error "Unknown node kind: " & $n.kind & "\n" & n.repr
+
+  # Final output template wraps everything in a block and provides the `nodes` variable.
+  template resultTemplate(elementBuilder) {.dirty.} =
+    block:
+      var nodes = newSeq[Node]()
+      elementBuilder
+      nodes
+
+  result = getAst(resultTemplate(elements))
+  if level == 0:
+    echo result.repr
 
 
 macro buildSvg(body: untyped): seq[Node] =
+  echo " --------- body ----------- "
   echo body.treeRepr
+  echo " --------- body ----------- "
 
   let kids = newProc(procType=nnkDo, body=body)
   expectKind kids, nnkDo
-  result = buildSvgProc(body(kids))
-
-  result = quote do:
-    @[newNode("a")]
+  result = buildSvgProc(body(kids), 0)
 
 
 let svg = buildSvg:
   g:
     circle
     circle(cx=120, cy=150)
+    circle(cx=120, cy=150):
+      withSubElement()
   g():
-    #for i in 0 .. 3:
-    circle()
-    circle(cx=120, cy=150)
+    for i in 0 .. 3:
+      circle()
+      circle(cx=120, cy=150)
+
+echo svg
 
 
 let svg2 = (block:
@@ -111,8 +139,8 @@ let svg2 = (block:
         discard
   curNode
 )
-
 echo svg2
+
 
 let svg3 = (block:
   var nodes = newSeq[Node]()
@@ -130,5 +158,23 @@ let svg3 = (block:
 
   nodes
 )
-
 echo svg3
+
+when false:
+  static:
+    dumpTree:
+      block:
+        var nodes = newSeq[Node]()
+
+        let tmp = newNode("g")
+        nodes.add(tmp)
+        tmp.children = (block:
+          var nodes = newSeq[Node]()
+          let tmp1 = newNode("circle")
+          nodes.add(tmp1)
+          let tmp2 = newNode("circle")
+          nodes.add(tmp1)
+          nodes
+        )
+
+        nodes
