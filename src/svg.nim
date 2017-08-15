@@ -32,6 +32,21 @@ proc prettyString*(n: Node, indent: int): string =
   for child in n.children:
     result &= prettyString(child, indent+2)
 
+proc render*(nodes: Nodes, indent: int = 0): string =
+  for n in nodes:
+    let pad = spaces(indent)
+    result = pad & "<" & n.tag
+    if not n.attributes.isNil and n.attributes.len > 0:
+      result &= " "
+      result &= $n.attributes.map(attr => attr[0] & "=\"" & attr[1] & "\"").join(" ")
+    if not n.children.isNil and n.children.len > 0:
+      result &= ">\n"
+      result &= render(n.children, indent+2)
+      result &= pad & "</" & n.tag & ">"
+    else:
+      result &= "/>\n"
+
+
 proc `$`*(n: Node): string =
   n.prettyString(0)
 
@@ -126,8 +141,11 @@ proc buildNodes(body: NimNode, level: int): NimNode =
           newNimNode(nnkEmpty)
       let attributes = extractAttributes(n)
       # echo attributes.repr
+      # TODO: handle nil cases explicitly by constructing empty seqs to avoid nil issues
       result = getAst(appendElement(tmp, tag, attributes, childrenBlock))
   of nnkIdent:
+    # Currently a single ident is treated as an empty tag. Not sure if
+    # there more important use cases. Maybe `embed` them?
     let tmp = genSym(nskLet, "tmp")
     let tag = newStrLitNode($n)
     let childrenBlock = newEmptyNode()
