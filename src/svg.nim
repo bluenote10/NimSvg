@@ -3,10 +3,12 @@ import strutils
 
 
 type
+  Attributes = seq[(string, string)]
+
   Node* = ref object
     tag: string
     children: Nodes
-    attributes: seq[(string, string)]
+    attributes: Attributes
 
   Nodes* = seq[Node]
 
@@ -15,6 +17,9 @@ proc newNode*(tag: string): Node =
 
 proc newNode*(tag: string, children: Nodes): Node =
   Node(tag: tag, children: children)
+
+proc newNode*(tag: string, attributes: Attributes): Node =
+  Node(tag: tag, children: newSeq[Node](), attributes: attributes)
 
 proc prettyString*(n: Node, indent: int): string =
   let pad = spaces(indent)
@@ -37,6 +42,8 @@ proc `==`*(a, b: Node): bool =
     return false
   elif a.children.len != b.children.len:
     return false
+  elif a.attributes.len != b.attributes.len:
+    return false
   else:
     var same = true
     for i in 0 ..< a.children.len:
@@ -44,15 +51,44 @@ proc `==`*(a, b: Node): bool =
     return same
 
 
+proc getName(n: NimNode): string =
+  case n.kind
+  of nnkIdent:
+    result = $n.ident
+  of nnkAccQuoted:
+    result = ""
+    for i in 0..<n.len:
+      result.add getName(n[i])
+  of nnkStrLit..nnkTripleStrLit:
+    result = n.strVal
+  else:
+    #echo repr n
+    expectKind(n, nnkIdent)
+
+proc extractAttributes(n: NimNode): NimNode =
+  ## Extracts named parameters from a callkind node and
+  ## converts it to a seq[(str, str)] ast.
+  result = quote: @[]
+  result = result[0]
+  for i in 1 ..< n.len:
+    let x = n[i]
+    if x.kind == nnkExprEqExpr:
+      let key = x[0].getName
+      let value = newCall("$", x[1])
+      let tupleExpr = newPar(newStrLitNode(key), value)
+      result[1].add(tupleExpr)
+
+
 proc buildNodesBlock(body: NimNode, level: int): NimNode
 
 
 proc buildNodes(body: NimNode, level: int): NimNode =
 
-  template appendElement(tmp, tag, childrenBlock) {.dirty.} =
+  template appendElement(tmp, tag, attrs, childrenBlock) {.dirty.} =
     bind newNode
     let tmp = newNode(tag)
     nodes.add(tmp)
+    tmp.attributes = attrs
     tmp.children = childrenBlock
 
   let n = copyNimTree(body)
@@ -61,19 +97,24 @@ proc buildNodes(body: NimNode, level: int): NimNode =
 
   case n.kind
   of nnkCallKinds:
-    let tag = newStrLitNode($(n[0]))
     let tmp = genSym(nskLet, "tmp")
-    # if the last element is an nnkStmtList (block argument) => recursion for children.
-    let children =
+    let tag = newStrLitNode($(n[0]))
+    # if the last element is an nnkStmtList (block argument)
+    # => full recursion to build block statement for children
+    let childrenBlock =
       if n.len >= 2 and n[^1].kind == nnkStmtList:
         buildNodesBlock(n[^1], level+1)
       else:
         newNimNode(nnkEmpty)
-    result = getAst(appendElement(tmp, tag, children))
+    let attributes = extractAttributes(n)
+    # echo attributes.repr
+    result = getAst(appendElement(tmp, tag, attributes, childrenBlock))
   of nnkIdent:
-    let tag = newStrLitNode($n)
     let tmp = genSym(nskLet, "tmp")
-    result = getAst(appendElement(tmp, tag, newEmptyNode()))
+    let tag = newStrLitNode($n)
+    let childrenBlock = newEmptyNode()
+    let attributes = newEmptyNode()
+    result = getAst(appendElement(tmp, tag, attributes, childrenBlock))
 
   of nnkForStmt, nnkIfExpr, nnkElifExpr, nnkElseExpr,
       nnkOfBranch, nnkElifBranch, nnkExceptBranch, nnkElse,
@@ -147,7 +188,7 @@ when isMainModule:
         g:
           circle
           circle(cx=120, cy=150)
-          circle(cx=120, cy=150):
+          circle():
             withSubElement()
         g():
           for i in 0 ..< 3:
@@ -156,18 +197,18 @@ when isMainModule:
       let exp = @[
         newNode("g", @[
           newNode("circle"),
-          newNode("circle"),
+          newNode("circle", @[("cx", "120"), ("cy", "150")]),
           newNode("circle", @[
             newNode("withSubElement")
           ]),
         ]),
         newNode("g", @[
           newNode("circle"),
+          newNode("circle", @[("cx", "120"), ("cy", "150")]),
           newNode("circle"),
+          newNode("circle", @[("cx", "120"), ("cy", "150")]),
           newNode("circle"),
-          newNode("circle"),
-          newNode("circle"),
-          newNode("circle"),
+          newNode("circle", @[("cx", "120"), ("cy", "150")]),
         ]),
       ]
       verify(svg, exp)
