@@ -26,7 +26,8 @@ proc newNode*(tag: string, attributes: Attributes): Node =
 proc prettyString*(n: Node, indent: int): string =
   let pad = spaces(indent)
   result = pad & n.tag & "("
-  result &= $n.attributes.map(attr => attr[0] & "=" & attr[1]).join(", ")
+  if not n.attributes.isNil:
+    result &= $n.attributes.map(attr => attr[0] & "=" & attr[1]).join(", ")
   result &= ")\n"
   for child in n.children:
     result &= prettyString(child, indent+2)
@@ -98,6 +99,10 @@ proc buildNodes(body: NimNode, level: int): NimNode =
     tmp.attributes = attrs
     tmp.children = childrenBlock
 
+  template embedSeq(nodesSeqExpr) {.dirty.} =
+    for node in nodesSeqExpr:
+      nodes.add(node)
+
   let n = copyNimTree(body)
   # echo level, " ", n.kind
   # echo n.treeRepr
@@ -108,16 +113,20 @@ proc buildNodes(body: NimNode, level: int): NimNode =
   of nnkCallKindsNoInfix:
     let tmp = genSym(nskLet, "tmp")
     let tag = newStrLitNode($(n[0]))
-    # if the last element is an nnkStmtList (block argument)
-    # => full recursion to build block statement for children
-    let childrenBlock =
-      if n.len >= 2 and n[^1].kind == nnkStmtList:
-        buildNodesBlock(n[^1], level+1)
-      else:
-        newNimNode(nnkEmpty)
-    let attributes = extractAttributes(n)
-    # echo attributes.repr
-    result = getAst(appendElement(tmp, tag, attributes, childrenBlock))
+    if $(n[0]) == "embed":
+      let nodesSeqExpr = n[1]
+      result = getAst(embedSeq(nodesSeqExpr))
+    else:
+      # if the last element is an nnkStmtList (block argument)
+      # => full recursion to build block statement for children
+      let childrenBlock =
+        if n.len >= 2 and n[^1].kind == nnkStmtList:
+          buildNodesBlock(n[^1], level+1)
+        else:
+          newNimNode(nnkEmpty)
+      let attributes = extractAttributes(n)
+      # echo attributes.repr
+      result = getAst(appendElement(tmp, tag, attributes, childrenBlock))
   of nnkIdent:
     let tmp = genSym(nskLet, "tmp")
     let tag = newStrLitNode($n)
@@ -300,3 +309,28 @@ when isMainModule:
       ]
       verify(svg, exp)
 
+    test "embed":
+      proc sub(): Nodes = buildSvg:
+        a()
+        b()
+      proc withArg(x: int): Nodes = buildSvg:
+        for i in 0 .. x:
+          x(x=i)
+      let svg = buildSvg:
+        x()
+        embed sub()
+        embed(sub())
+        embed sub() & sub()
+        embed(sub() & sub())
+        embed withArg(2)
+        y()
+      let exp = @[
+        newNode("x"),
+        newNode("a"), newNode("b"),
+        newNode("a"), newNode("b"),
+        newNode("a"), newNode("b"), newNode("a"), newNode("b"),
+        newNode("a"), newNode("b"), newNode("a"), newNode("b"),
+        newNode("x", @[("x", "0")]), newNode("x", @[("x", "1")]), newNode("x", @[("x", "2")]),
+        newNode("y"),
+      ]
+      verify(svg, exp)
