@@ -1,5 +1,7 @@
 import macros
 import strutils
+import sequtils
+import future
 
 
 type
@@ -23,7 +25,9 @@ proc newNode*(tag: string, attributes: Attributes): Node =
 
 proc prettyString*(n: Node, indent: int): string =
   let pad = spaces(indent)
-  result = pad & n.tag & "\n"
+  result = pad & n.tag & "("
+  result &= $n.attributes.map(attr => attr[0] & "=" & attr[1]).join(", ")
+  result &= ")\n"
   for child in n.children:
     result &= prettyString(child, indent+2)
 
@@ -48,6 +52,9 @@ proc `==`*(a, b: Node): bool =
     var same = true
     for i in 0 ..< a.children.len:
       same = same and a[i] == b[i]
+    for i in 0 ..< a.attributes.len:
+      same = same and a.attributes[i][0] == b.attributes[i][0]
+      same = same and a.attributes[i][1] == b.attributes[i][1]
     return same
 
 
@@ -95,8 +102,10 @@ proc buildNodes(body: NimNode, level: int): NimNode =
   # echo level, " ", n.kind
   # echo n.treeRepr
 
+  const nnkCallKindsNoInfix = {nnkCall, nnkPrefix, nnkPostfix, nnkCommand, nnkCallStrLit}
+
   case n.kind
-  of nnkCallKinds:
+  of nnkCallKindsNoInfix:
     let tmp = genSym(nskLet, "tmp")
     let tag = newStrLitNode($(n[0]))
     # if the last element is an nnkStmtList (block argument)
@@ -139,8 +148,13 @@ proc buildNodes(body: NimNode, level: int): NimNode =
     for i in 1 ..< n.len:
       result.add buildNodes(n[i], level+1)
 
+  of nnkVarSection, nnkLetSection, nnkConstSection:
+    result = n
+  of nnkInfix:
+    result = n
+
   else:
-    error "Unknown node kind: " & $n.kind & "\n" & n.repr
+    error "Unhandled node kind: " & $n.kind & "\n" & n.repr
 
   #result = elements
 
@@ -179,7 +193,7 @@ when isMainModule:
       echo "Trees don't match"
       echo " *** Generated:\n", svg
       echo " *** Expected:\n", exp
-    check svg == exp
+      check false
 
   suite "buildSvg":
 
@@ -213,7 +227,7 @@ when isMainModule:
       ]
       verify(svg, exp)
 
-    test "If":
+    test "if":
       let svg = buildSvg:
         g():
           if true:
@@ -243,7 +257,7 @@ when isMainModule:
       ]
       verify(svg, exp)
 
-    test "Case":
+    test "case":
       let x = 1
       let svg = buildSvg:
         g():
@@ -260,3 +274,29 @@ when isMainModule:
         ]),
       ]
       verify(svg, exp)
+
+    test "var/let/const":
+      let svg = buildSvg:
+        var x = 1
+        a(x=x)
+        let y = 2
+        a(y=y)
+        const z = 3
+        a(z=z)
+      let exp = @[
+        newNode("a", @[("x", "1")]),
+        newNode("a", @[("y", "2")]),
+        newNode("a", @[("z", "3")]),
+      ]
+      verify(svg, exp)
+
+    test "infix op":
+      let svg = buildSvg:
+        var x = 1
+        x += 1
+        a(x=x)
+      let exp = @[
+        newNode("a", @[("x", "2")]),
+      ]
+      verify(svg, exp)
+
