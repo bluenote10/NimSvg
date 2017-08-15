@@ -6,6 +6,7 @@ type
   Node* = ref object
     tag: string
     children: Nodes
+    attributes: seq[(string, string)]
 
   Nodes* = seq[Node]
 
@@ -43,15 +44,16 @@ proc `==`*(a, b: Node): bool =
     return same
 
 
-proc buildSvgProcWrapped(body: NimNode, level: int): NimNode
+proc buildNodesBlock(body: NimNode, level: int): NimNode
 
 
-proc buildSvgProc(body: NimNode, level: int): NimNode =
+proc buildNodes(body: NimNode, level: int): NimNode =
 
-  template appendElement(tmp, tag, childrenArg) {.dirty.} =
+  template appendElement(tmp, tag, childrenBlock) {.dirty.} =
+    bind newNode
     let tmp = newNode(tag)
     nodes.add(tmp)
-    tmp.children = childrenArg
+    tmp.children = childrenBlock
 
   let n = copyNimTree(body)
   # echo level, " ", n.kind
@@ -64,7 +66,7 @@ proc buildSvgProc(body: NimNode, level: int): NimNode =
     # if the last element is an nnkStmtList (block argument) => recursion for children.
     let children =
       if n.len >= 2 and n[^1].kind == nnkStmtList:
-        buildSvgProcWrapped(n[^1], level+1)
+        buildNodesBlock(n[^1], level+1)
       else:
         newNimNode(nnkEmpty)
     result = getAst(appendElement(tmp, tag, children))
@@ -80,21 +82,21 @@ proc buildSvgProc(body: NimNode, level: int): NimNode =
     result = copyNimTree(n)
     let L = n.len
     if L > 0:
-      result[L-1] = buildSvgProc(result[L-1], level+1)
+      result[L-1] = buildNodes(result[L-1], level+1)
 
   of nnkStmtList, nnkStmtListExpr, nnkWhenStmt, nnkIfStmt, nnkTryStmt,
       nnkFinally:
     # recurse for every child:
     result = copyNimNode(n)
     for x in n:
-      result.add buildSvgProc(x, level+1)
+      result.add buildNodes(x, level+1)
 
   of nnkCaseStmt:
     # recurse for children, but don't add call for case ident
     result = copyNimNode(n)
     result.add n[0]
     for i in 1 ..< n.len:
-      result.add buildSvgProc(n[i], level+1)
+      result.add buildNodes(n[i], level+1)
 
   else:
     error "Unknown node kind: " & $n.kind & "\n" & n.repr
@@ -102,17 +104,16 @@ proc buildSvgProc(body: NimNode, level: int): NimNode =
   #result = elements
 
 
-proc buildSvgProcWrapped(body: NimNode, level: int): NimNode =
-
-  let elements = buildSvgProc(body, level)
-
-  # Final output template wraps everything in a block and provides the `nodes` variable.
+proc buildNodesBlock(body: NimNode, level: int): NimNode =
+  ## This proc finializes the node building by wrapping everything
+  ## in a block which provides and returns the `nodes` variable.
   template resultTemplate(elementBuilder) {.dirty.} =
     block:
       var nodes = newSeq[Node]()
       elementBuilder
       nodes
 
+  let elements = buildNodes(body, level)
   result = getAst(resultTemplate(elements))
   if level == 0:
     echo result.repr
@@ -125,7 +126,7 @@ macro buildSvg*(body: untyped): seq[Node] =
 
   let kids = newProc(procType=nnkDo, body=body)
   expectKind kids, nnkDo
-  result = buildSvgProcWrapped(body(kids), 0)
+  result = buildNodesBlock(body(kids), 0)
 
 
 
