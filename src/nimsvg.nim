@@ -235,9 +235,9 @@ proc buildAnimation*(filenameBase: string, numFrames: int, builder: int -> Nodes
     withFile(f, filename):
       f.write(nodes.render())
  
-  let pattern = filenameBase & "_frame_0001.svg"
+  let pattern = filenameBase & "_frame_*.svg"
   let outFile = filenameBase & ".gif"
-  let cmd = "bash -c \"convert -delay 10 -loop 0 $1 $2\"" % [pattern, outFile]
+  let cmd = "bash -c \"convert -delay 5 -loop 0 -dispose previous $1 -reverse $1 $2\"" % [pattern, outFile]
   echo "Running: ", cmd
   discard execShellCmd(cmd)
 
