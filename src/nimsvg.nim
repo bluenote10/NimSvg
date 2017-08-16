@@ -201,7 +201,7 @@ proc buildNodesBlock(body: NimNode, level: int): NimNode =
     echo result.repr
 
 
-macro buildSvg*(body: untyped): seq[Node] =
+macro buildSvg*(body: untyped): Nodes =
   echo " --------- body ----------- "
   echo body.treeRepr
   echo " --------- body ----------- "
@@ -210,6 +210,10 @@ macro buildSvg*(body: untyped): seq[Node] =
   expectKind kids, nnkDo
   result = buildNodesBlock(body(kids), 0)
 
+
+template buildSvgFile*(filename: string, body: untyped): untyped =
+  let nodes = buildSvg(body)
+  open(filename, fmWrite).write(nodes.render())
 
 
 when isMainModule:
