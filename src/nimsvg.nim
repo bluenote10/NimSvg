@@ -2,6 +2,7 @@ import macros
 import strutils
 import sequtils
 import future
+import os
 
 
 type
@@ -91,8 +92,7 @@ proc getName(n: NimNode): string =
 proc extractAttributes(n: NimNode): NimNode =
   ## Extracts named parameters from a callkind node and
   ## converts it to a seq[(str, str)] ast.
-  result = quote: @[]
-  result = result[0]
+  result = newCall("@", newNimNode(nnkBracket))
   for i in 1 ..< n.len:
     let x = n[i]
     if x.kind == nnkExprEqExpr:
@@ -211,9 +211,35 @@ macro buildSvg*(body: untyped): Nodes =
   result = buildNodesBlock(body(kids), 0)
 
 
+template withFile(f, fn, body: untyped): untyped =
+  var f: File
+  if open(f, fn, fmWrite):
+    try:
+      body
+    finally:
+      close(f)
+  else:
+    quit("cannot open: " & fn)
+
+
 template buildSvgFile*(filename: string, body: untyped): untyped =
   let nodes = buildSvg(body)
-  open(filename, fmWrite).write(nodes.render())
+  withFile(f, filename):
+    f.write(nodes.render())
+
+
+proc buildAnimation*(filenameBase: string, numFrames: int, builder: int -> Nodes) =
+  for i in 0 ..< numFrames:
+    let filename = filenameBase & "_frame_" & align($i, 4, '0') & ".svg"
+    let nodes = builder(i)
+    withFile(f, filename):
+      f.write(nodes.render())
+ 
+  let pattern = filenameBase & "_frame_0001.svg"
+  let outFile = filenameBase & ".gif"
+  let cmd = "bash -c \"convert -delay 10 -loop 0 $1 $2\"" % [pattern, outFile]
+  echo "Running: ", cmd
+  discard execShellCmd(cmd)
 
 
 when isMainModule:
