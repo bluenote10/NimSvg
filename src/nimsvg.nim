@@ -231,7 +231,7 @@ template buildSvgFile*(filename: string, body: untyped): untyped =
     f.write(nodes.render())
 
 
-proc buildAnimation*(filenameBase: string, numFrames: int, builder: int -> Nodes) =
+proc buildAnimation*(filenameBase: string, numFrames: int, backAndForth: bool = false, builder: int -> Nodes) =
   for i in 0 ..< numFrames:
     let filename = filenameBase & "_frame_" & align($i, 4, '0') & ".svg"
     let nodes = builder(i)
@@ -240,7 +240,10 @@ proc buildAnimation*(filenameBase: string, numFrames: int, builder: int -> Nodes
  
   let pattern = filenameBase & "_frame_*.svg"
   let outFile = filenameBase & ".gif"
-  let cmd = "bash -c \"convert -delay 5 -loop 0 -dispose previous $1 -reverse $1 $2\"" % [pattern, outFile]
+  let cmd = if backAndForth:
+      "bash -c \"convert -delay 5 -loop 0 -dispose previous $1 -reverse $1 $2\"" % [pattern, outFile]
+    else:
+      "bash -c \"convert -delay 5 -loop 0 -dispose previous $1 $2\"" % [pattern, outFile]
   echo "Running: ", cmd
   discard execShellCmd(cmd)
 

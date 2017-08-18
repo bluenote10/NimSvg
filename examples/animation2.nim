@@ -1,8 +1,8 @@
 import nimsvg, math
 
-let numFrames = 20
+let numFrames = 40
 
-buildAnimation("examples/anim2/anim2", numFrames) do (frame: int) -> Nodes:
+buildAnimation("examples/anim2/anim2", numFrames, false) do (frame: int) -> Nodes:
   let w = 200
   let h = 200
   let centerX = w / 2
@@ -13,7 +13,7 @@ buildAnimation("examples/anim2/anim2", numFrames) do (frame: int) -> Nodes:
   buildSvg:    
     svg(width=w, height=h):
       defs:
-        filter(id="shadow", x=0, y=0, width="200%", height="200%"):
+        filter(id="shadow", x=0, y=0):
           feOffset(result="offOut", `in`="SourceAlpha", dx="20", dy="20")
           feGaussianBlur(result="blurOut", `in`="offOut", stdDeviation="10")
           feBlend(`in`="SourceGraphic", in2="blurOut", mode="normal")
@@ -21,7 +21,7 @@ buildAnimation("examples/anim2/anim2", numFrames) do (frame: int) -> Nodes:
         let alpha = i / numDots * 2 * PI
         let x = centerX + circleRadius * sin(alpha)
         let y = centerY + circleRadius * cos(alpha)
-        let peakIndex = frame / numFrames
+        let peakIndex = 1.0 - frame / numFrames
         let frac = i / numDots
         let dist = [
           abs(peakIndex - frac),
