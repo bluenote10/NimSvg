@@ -34,9 +34,10 @@ proc prettyString*(n: Node, indent: int): string =
     result &= prettyString(child, indent+2)
 
 proc render*(nodes: Nodes, indent: int = 0): string =
+  result = newStringOfCap(1024)
   for n in nodes:
     let pad = spaces(indent)
-    result = pad & "<" & n.tag
+    result &= pad & "<" & n.tag
     if not n.attributes.isNil and n.attributes.len > 0:
       result &= " "
       result &= $n.attributes.map(attr => attr[0] & "=\"" & attr[1] & "\"").join(" ")
@@ -131,6 +132,8 @@ proc buildNodes(body: NimNode, level: int): NimNode =
     if $(n[0]) == "embed":
       let nodesSeqExpr = n[1]
       result = getAst(embedSeq(nodesSeqExpr))
+    elif $(n[0]) == "!":
+      result = n[1]
     else:
       # if the last element is an nnkStmtList (block argument)
       # => full recursion to build block statement for children
