@@ -16,8 +16,6 @@ buildAnimation("examples/anim2/anim2", numFrames, false) do (frame: int) -> Node
         filter(id="shadow", x="-200%", y="-200%", width="500%", height="500%"):
           feOffset(result="offOut", `in`="SourceAlpha", dx="2", dy="2")
           feGaussianBlur(result="blurOut", `in`="offOut", stdDeviation="5")
-          #feFlood(`flood-color`="#3D4574", `flood-opacity`=0.5, result="offsetColor")
-          #feComposite(`in`="blurOur", in2="offOut", operator="in", result="offOut")
           feBlend(`in`="SourceGraphic", in2="blurOut", mode="normal")
       for i in 0 ..< numDots:
         let alpha = i / numDots * 2 * PI
@@ -31,7 +29,7 @@ buildAnimation("examples/anim2/anim2", numFrames, false) do (frame: int) -> Node
           abs(peakIndex - frac - 1),
         ].min()
         let radius = dotRadius + max(dotRadius - dist*dist * 20, 0)
-        ! echo(i, " ", frame, " ", dist, " ", peakIndex, " ", frac)
+        # call: echo(i, " ", frame, " ", dist, " ", peakIndex, " ", frac)
         circle(
           cx=x, cy=y, r=radius, stroke="#3D4574", `stroke-width`=1, fill="#DDD",
           filter="url(#shadow)"

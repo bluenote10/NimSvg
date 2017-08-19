@@ -16,5 +16,6 @@ task test, "Runs unit tests":
 
 task examples, "Runs examples":
   exec "nim c -r examples/example1.nim"
+  exec "nim c -r examples/text1.nim"
   exec "nim c -r examples/animation1.nim"
   exec "nim c -r examples/animation2.nim"

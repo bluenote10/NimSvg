@@ -39,16 +39,19 @@ proc render*(nodes: Nodes, indent: int = 0): string =
     result &= "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"
   for n in nodes:
     let pad = spaces(indent)
-    result &= pad & "<" & n.tag
-    if not n.attributes.isNil and n.attributes.len > 0:
-      result &= " "
-      result &= $n.attributes.map(attr => attr[0] & "=\"" & attr[1] & "\"").join(" ")
-    if not n.children.isNil and n.children.len > 0:
-      result &= ">\n"
-      result &= render(n.children, indent+2)
-      result &= pad & "</" & n.tag & ">\n"
+    if n.tag != "#text":
+      result &= pad & "<" & n.tag
+      if not n.attributes.isNil and n.attributes.len > 0:
+        result &= " "
+        result &= $n.attributes.map(attr => attr[0] & "=\"" & attr[1] & "\"").join(" ")
+      if not n.children.isNil and n.children.len > 0:
+        result &= ">\n"
+        result &= render(n.children, indent+2)
+        result &= pad & "</" & n.tag & ">\n"
+      else:
+        result &= "/>\n"
     else:
-      result &= "/>\n"
+      result &= pad & n.attributes[0][1] & "\n"
 
 
 proc `$`*(n: Node): string =
@@ -78,6 +81,13 @@ proc `==`*(a, b: Node): bool =
     return same
 
 
+proc unwrapStmtList(n: NimNode): NimNode =
+  if n.kind == nnkStmtList:
+    return n[0]
+  else:
+    return n
+
+
 proc getName(n: NimNode): string =
   case n.kind
   of nnkIdent:
@@ -103,6 +113,13 @@ proc extractAttributes(n: NimNode): NimNode =
       let value = newCall("$", x[1])
       let tupleExpr = newPar(newStrLitNode(key), value)
       result[1].add(tupleExpr)
+
+proc dummyTextAttributes(text: NimNode): NimNode =
+  result = newCall("@", newNimNode(nnkBracket))
+  let key = newStrLitNode("text")
+  let value = text
+  let tupleExpr = newPar(key, value)
+  result[1].add(tupleExpr)
 
 
 proc buildNodesBlock(body: NimNode, level: int): NimNode
@@ -130,12 +147,19 @@ proc buildNodes(body: NimNode, level: int): NimNode =
   case n.kind
   of nnkCallKindsNoInfix:
     let tmp = genSym(nskLet, "tmp")
-    let tag = newStrLitNode($(n[0]))
-    if $(n[0]) == "embed":
+    let tagStr = $(n[0])
+    let tag = newStrLitNode(tagStr)
+    if tagStr == "embed":
       let nodesSeqExpr = n[1]
       result = getAst(embedSeq(nodesSeqExpr))
-    elif $(n[0]) == "!":
+    elif tagStr == "call":
       result = n[1]
+    elif tagStr == "t":
+      let tmp = genSym(nskLet, "tmp")
+      let tag = newStrLitNode("#text")
+      let childrenBlock = newEmptyNode()
+      let attributes = dummyTextAttributes(n[1])
+      result = getAst(appendElement(tmp, tag, attributes, childrenBlock))
     else:
       # if the last element is an nnkStmtList (block argument)
       # => full recursion to build block statement for children
@@ -229,6 +253,7 @@ template withFile(f, fn, body: untyped): untyped =
 
 template buildSvgFile*(filename: string, body: untyped): untyped =
   let nodes = buildSvg(body)
+  echo nodes.render()
   withFile(f, filename):
     f.write(nodes.render())
 
