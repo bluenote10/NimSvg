@@ -35,6 +35,8 @@ proc prettyString*(n: Node, indent: int): string =
 
 proc render*(nodes: Nodes, indent: int = 0): string =
   result = newStringOfCap(1024)
+  if indent == 0:
+    result &= "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"
   for n in nodes:
     let pad = spaces(indent)
     result &= pad & "<" & n.tag
@@ -44,7 +46,7 @@ proc render*(nodes: Nodes, indent: int = 0): string =
     if not n.children.isNil and n.children.len > 0:
       result &= ">\n"
       result &= render(n.children, indent+2)
-      result &= pad & "</" & n.tag & ">"
+      result &= pad & "</" & n.tag & ">\n"
     else:
       result &= "/>\n"
 
@@ -237,7 +239,7 @@ proc buildAnimation*(filenameBase: string, numFrames: int, backAndForth: bool = 
     let nodes = builder(i)
     withFile(f, filename):
       f.write(nodes.render())
- 
+
   let pattern = filenameBase & "_frame_*.svg"
   let outFile = filenameBase & ".gif"
   let cmd = if backAndForth:

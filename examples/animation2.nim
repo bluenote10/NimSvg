@@ -10,12 +10,14 @@ buildAnimation("examples/anim2/anim2", numFrames, false) do (frame: int) -> Node
   let numDots = 20
   let dotRadius = w / 40
   let circleRadius = 0.4 * w.float
-  buildSvg:    
-    svg(width=w, height=h):
+  buildSvg:
+    svg(width=w, height=h, xmlns="http://www.w3.org/2000/svg", version="1.1", baseProfile="full"):
       defs:
-        filter(id="shadow", x=0, y=0):
-          feOffset(result="offOut", `in`="SourceAlpha", dx="20", dy="20")
-          feGaussianBlur(result="blurOut", `in`="offOut", stdDeviation="10")
+        filter(id="shadow", x="-200%", y="-200%", width="500%", height="500%"):
+          feOffset(result="offOut", `in`="SourceAlpha", dx="2", dy="2")
+          feGaussianBlur(result="blurOut", `in`="offOut", stdDeviation="5")
+          #feFlood(`flood-color`="#3D4574", `flood-opacity`=0.5, result="offsetColor")
+          #feComposite(`in`="blurOur", in2="offOut", operator="in", result="offOut")
           feBlend(`in`="SourceGraphic", in2="blurOut", mode="normal")
       for i in 0 ..< numDots:
         let alpha = i / numDots * 2 * PI
@@ -31,6 +33,6 @@ buildAnimation("examples/anim2/anim2", numFrames, false) do (frame: int) -> Node
         let radius = dotRadius + max(dotRadius - dist*dist * 20, 0)
         ! echo(i, " ", frame, " ", dist, " ", peakIndex, " ", frac)
         circle(
-          cx=x, cy=y, r=radius, stroke="#333", `stroke-width`=1, fill="#EEE",
+          cx=x, cy=y, r=radius, stroke="#3D4574", `stroke-width`=1, fill="#DDD",
           filter="url(#shadow)"
         )
