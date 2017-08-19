@@ -6,4 +6,4 @@ DSL to generate SVG files.
 
 ![animation1](examples/anim1/anim1.gif)
 
-![animation2](examples/anim1/anim1.gif)
+![animation2](examples/anim1/anim2.gif)
