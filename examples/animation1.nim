@@ -2,7 +2,7 @@ import nimsvg
 
 let numFrames = 100
 
-buildAnimation("examples/anim1/anim1", numFrames) do (i: int) -> Nodes:
+buildAnimation("examples/anim1/anim1", numFrames, false) do (i: int) -> Nodes:
   let w = 200
   let h = 200
   buildSvg:
