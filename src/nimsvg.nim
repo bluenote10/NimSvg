@@ -332,3 +332,11 @@ proc buildAnimation*(filenameBase: string, numFrames: int, animSettings: AnimSet
   discard execShellCmd(cmd)
 
 
+# -----------------------------------------------------------------------------
+# Misc utils
+# -----------------------------------------------------------------------------
+
+template sourceBaseName*(): string =
+  instantiationInfo().filename.splitFile().name
+
+

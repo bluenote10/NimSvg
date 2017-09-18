@@ -1,6 +1,10 @@
-import nimsvg
+import nimsvg, random, ospaths
 
-buildSvgFile("examples/example1.svg"):
-  let size = 100
+buildSvgFile("examples" / sourceBaseName() & ".svg"):
+  let size = 200
   svg(width=size, height=size):
-    circle(cx=50, cy=50, r=40, stroke="green", `stroke-width`=4, fill="yellow")
+    for _ in 0 .. 1000:
+      let x = random(size)
+      let y = random(size)
+      let radius = random(5)
+      circle(cx=x, cy=y, r=radius, stroke="#111122", fill="#E0E0F0", `fill-opacity`=0.5)

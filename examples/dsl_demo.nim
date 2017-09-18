@@ -14,7 +14,7 @@ proc main(): Nodes =
     embed circles()
     embed circles()
 
-buildSvgFile("examples/example1.svg"):
+buildSvgFile("examples/dsl_demo.svg"):
   svg(width=100, height=100):
     embed main()
 
