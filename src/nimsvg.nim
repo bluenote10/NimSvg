@@ -5,6 +5,10 @@ import future
 import os
 
 
+# -----------------------------------------------------------------------------
+# XML Node stuff
+# -----------------------------------------------------------------------------
+
 type
   Attributes = seq[(string, string)]
 
@@ -15,14 +19,18 @@ type
 
   Nodes* = seq[Node]
 
+
 proc newNode*(tag: string): Node =
   Node(tag: tag, children: newSeq[Node]())
+
 
 proc newNode*(tag: string, children: Nodes): Node =
   Node(tag: tag, children: children)
 
+
 proc newNode*(tag: string, attributes: Attributes): Node =
   Node(tag: tag, children: newSeq[Node](), attributes: attributes)
+
 
 proc prettyString*(n: Node, indent: int): string =
   let pad = spaces(indent)
@@ -32,6 +40,7 @@ proc prettyString*(n: Node, indent: int): string =
   result &= ")\n"
   for child in n.children:
     result &= prettyString(child, indent+2)
+
 
 proc render*(nodes: Nodes, indent: int = 0): string =
   result = newStringOfCap(1024)
@@ -57,12 +66,15 @@ proc render*(nodes: Nodes, indent: int = 0): string =
 proc `$`*(n: Node): string =
   n.prettyString(0)
 
+
 proc `$`*(nodes: Nodes): string =
   result = ""
   for n in nodes:
     result &= n.prettyString(0)
 
+
 proc `[]`*(n: Node, i: int): Node = n.children[i]
+
 
 proc `==`*(a, b: Node): bool =
   if a.tag != b.tag:
@@ -81,12 +93,9 @@ proc `==`*(a, b: Node): bool =
     return same
 
 
-proc unwrapStmtList(n: NimNode): NimNode =
-  if n.kind == nnkStmtList:
-    return n[0]
-  else:
-    return n
-
+# -----------------------------------------------------------------------------
+# Internal macros
+# -----------------------------------------------------------------------------
 
 proc getName(n: NimNode): string =
   case n.kind
@@ -102,6 +111,7 @@ proc getName(n: NimNode): string =
     #echo repr n
     expectKind(n, nnkIdent)
 
+
 proc extractAttributes(n: NimNode): NimNode =
   ## Extracts named parameters from a callkind node and
   ## converts it to a seq[(str, str)] ast.
@@ -113,6 +123,7 @@ proc extractAttributes(n: NimNode): NimNode =
       let value = newCall("$", x[1])
       let tupleExpr = newPar(newStrLitNode(key), value)
       result[1].add(tupleExpr)
+
 
 proc dummyTextAttributes(text: NimNode): NimNode =
   result = newCall("@", newNimNode(nnkBracket))
@@ -226,14 +237,19 @@ proc buildNodesBlock(body: NimNode, level: int): NimNode =
 
   let elements = buildNodes(body, level)
   result = getAst(resultTemplate(elements))
-  if level == 0:
-    echo result.repr
+  when defined(debugDsl):
+    if level == 0:
+      echo result.repr
 
+# -----------------------------------------------------------------------------
+# SVG Builder
+# -----------------------------------------------------------------------------
 
 macro buildSvg*(body: untyped): Nodes =
-  echo " --------- body ----------- "
-  echo body.treeRepr
-  echo " --------- body ----------- "
+  when defined(debugDsl):
+    echo " --------- body ----------- "
+    echo body.treeRepr
+    echo " --------- body ----------- "
 
   let kids = newProc(procType=nnkDo, body=body)
   expectKind kids, nnkDo
@@ -251,14 +267,42 @@ template withFile(f, fn, body: untyped): untyped =
     quit("cannot open: " & fn)
 
 
+proc ensureParentDirExists(filename: string) =
+  let parent = parentDir(filename)
+  if parent != "":
+    createDir(parent)
+
+
 template buildSvgFile*(filename: string, body: untyped): untyped =
+  ensureParentDirExists(filename)
   let nodes = buildSvg(body)
-  echo nodes.render()
   withFile(f, filename):
     f.write(nodes.render())
 
 
-proc buildAnimation*(filenameBase: string, numFrames: int, backAndForth: bool = false, builder: int -> Nodes) =
+# -----------------------------------------------------------------------------
+# Animations Builder
+# -----------------------------------------------------------------------------
+
+type
+  AnimSettings = object
+    backAndForth: bool
+
+
+proc animSettings*(): AnimSettings =
+  AnimSettings(
+    backAndForth: false
+  )
+
+
+proc backAndForth*(animSettings: AnimSettings, backAndForth: bool): AnimSettings =
+  result = animSettings
+  result.backAndForth = backAndForth
+
+
+proc buildAnimation*(filenameBase: string, numFrames: int, animSettings: AnimSettings = animSettings(), builder: int -> Nodes) =
+  ensureParentDirExists(filenameBase)
+
   for i in 0 ..< numFrames:
     let filename = filenameBase & "_frame_" & align($i, 4, '0') & ".svg"
     let nodes = builder(i)
@@ -267,10 +311,23 @@ proc buildAnimation*(filenameBase: string, numFrames: int, backAndForth: bool = 
 
   let pattern = filenameBase & "_frame_*.svg"
   let outFile = filenameBase & ".gif"
-  let cmd = if backAndForth:
-      "bash -c \"convert -delay 5 -loop 0 -dispose previous $1 -reverse $1 $2\"" % [pattern, outFile]
-    else:
-      "bash -c \"convert -delay 5 -loop 0 -dispose previous $1 $2\"" % [pattern, outFile]
+
+  var cmdElems = @[
+    "convert",
+    "-delay", "5",
+    "-loop", "0",
+    "-dispose", "previous",
+    pattern
+  ]
+  if animSettings.backAndForth:
+    cmdElems &= @[
+      "-reverse",
+      pattern
+    ]
+  cmdElems &= outfile
+
+  let cmd = cmdElems.join(" ")
+
   echo "Running: ", cmd
   discard execShellCmd(cmd)
 
