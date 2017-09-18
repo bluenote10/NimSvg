@@ -45,8 +45,10 @@ proc prettyString*(n: Node, indent: int): string =
 proc render*(nodes: Nodes, indent: int = 0): string =
   result = newStringOfCap(1024)
   if indent == 0:
-    result &= """<?xml version="1.0" encoding="UTF-8" ?>\n"""
+    result &= """<?xml version="1.0" encoding="UTF-8" ?>"""
+    result &= "\n"
     result &= """<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">"""
+    result &= "\n"
   for n in nodes:
     let pad = spaces(indent)
     if n.tag != "#text":
