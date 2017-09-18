@@ -1,8 +1,9 @@
 import nimsvg
 
 let numFrames = 100
+let settings = animSettings().backAndForth(true)
 
-buildAnimation("examples/anim1/anim1", numFrames, true) do (i: int) -> Nodes:
+buildAnimation("examples/anim1/anim1", numFrames, settings) do (i: int) -> Nodes:
   let w = 200
   let h = 200
   buildSvg:

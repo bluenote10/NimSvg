@@ -2,7 +2,7 @@ import nimsvg, math
 
 let numFrames = 40
 
-buildAnimation("examples/anim2/anim2", numFrames, false) do (frame: int) -> Nodes:
+buildAnimation("examples/anim2/anim2", numFrames, animSettings()) do (frame: int) -> Nodes:
   let w = 200
   let h = 200
   let centerX = w / 2
