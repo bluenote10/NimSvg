@@ -1,5 +1,8 @@
 import nimsvg
 import unittest
+import os
+import ospaths
+
 
 proc verify(svg, exp: Nodes) =
   if svg != exp:
@@ -7,6 +10,7 @@ proc verify(svg, exp: Nodes) =
     echo " *** Generated:\n", svg
     echo " *** Expected:\n", exp
     check false
+
 
 suite "buildSvg":
 
@@ -138,3 +142,16 @@ suite "buildSvg":
       newNode("y"),
     ]
     verify(svg, exp)
+
+
+suite "buildSvgFile":
+
+  test "path handling (1)":
+    let tmpFile = getTempDir() / "nimSvgTest" / "a" / "b" / "c" / "test.svg"
+    buildSvgFile(tmpFile):
+      svg(width=100, height=100)
+
+  test "path handling (2)":
+    setCurrentDir(getTempDir() / "nimSvgTest")
+    buildSvgFile("test.svg"):
+      svg(width=100, height=100)
