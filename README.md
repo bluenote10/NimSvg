@@ -24,13 +24,7 @@ Which produces the following SVG:
 </svg>
 ```
 
-![basic1](./examples/basic1.svg)<img src="./examples/basic1.svg">
-
-![basic1](https://cdn.rawgit.com/bluenote10/NimSvg/master/examples/basic1.svg)
-
-![basic1](https://rawgit.com/bluenote10/NimSvg/master/examples/basic1.svg)
-
-![basic1](examples/basic1.svg)
+![basic1](https://rawgit.com/bluenote10/NimSvg/master/examples/basic1.svg?sanitize=true)
 
 The DSL allows to mix tag expressions with regular Nim expressions like variable definitions, for loops, or if statements,
 which makes it easy to generate SVGs programmatically:
@@ -48,7 +42,7 @@ buildSvgFile("examples" / sourceBaseName() & ".svg"):
       circle(cx=x, cy=y, r=radius, stroke="#111122", fill="#E0E0F0", `fill-opacity`=0.5)
 ```
 
-![basic2](examples/basic2.svg)
+![basic2](https://rawgit.com/bluenote10/NimSvg/master/examples/basic2.svg?sanitize=true)
 
 
 ## Gallery
