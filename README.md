@@ -17,12 +17,18 @@ buildSvgFile("examples/basic1.svg"):
 
 Which produces the following SVG:
 
-```
+```svg
 <?xml version="1.0" encoding="UTF-8" ?>
 <svg width="200" height="200">
   <circle cx="100" cy="100" r="80" stroke="teal" stroke-width="4" fill="#DDD"/>
 </svg>
 ```
+
+![basic1](./examples/basic1.svg)<img src="./examples/basic1.svg">
+
+![basic1](https://cdn.rawgit.com/bluenote10/NimSvg/master/examples/basic1.svg)
+
+![basic1](https://rawgit.com/bluenote10/NimSvg/master/examples/basic1.svg)
 
 ![basic1](examples/basic1.svg)
 
