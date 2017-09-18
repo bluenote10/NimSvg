@@ -5,7 +5,7 @@ Nim-based DSL allowing to generate SVG files and GIF animations.
 ## DSL
 
 NimSvg's DSL is inspired by [Karax](https://github.com/pragmagic/karax), and allows to generate SVG trees in a similar manner.
-A simple hello world would look like this:
+A simple hello world
 
 ```nimrod
 import nimsvg
@@ -15,7 +15,7 @@ buildSvgFile("examples/basic1.svg"):
     circle(cx=100, cy=100, r=80, stroke="teal", `stroke-width`=4, fill="#DDD")
 ```
 
-Which produces the following SVG:
+produces the following SVG:
 
 ```svg
 <?xml version="1.0" encoding="UTF-8" ?>
@@ -23,6 +23,8 @@ Which produces the following SVG:
   <circle cx="100" cy="100" r="80" stroke="teal" stroke-width="4" fill="#DDD"/>
 </svg>
 ```
+
+Output:
 
 ![basic1](https://rawgit.com/bluenote10/NimSvg/master/examples/basic1.svg?sanitize=true)
 
@@ -41,6 +43,8 @@ buildSvgFile("examples" / sourceBaseName() & ".svg"):
       let radius = random(5)
       circle(cx=x, cy=y, r=radius, stroke="#111122", fill="#E0E0F0", `fill-opacity`=0.5)
 ```
+
+Output:
 
 ![basic2](https://rawgit.com/bluenote10/NimSvg/master/examples/basic2.svg?sanitize=true)
 
