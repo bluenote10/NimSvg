@@ -304,15 +304,19 @@ proc backAndForth*(animSettings: AnimSettings, backAndForth: bool): AnimSettings
 
 
 proc buildAnimation*(filenameBase: string, numFrames: int, animSettings: AnimSettings = animSettings(), builder: int -> Nodes) =
-  ensureParentDirExists(filenameBase)
+  createDir(filenameBase & "_frames")
+
+  proc svgFileName(suffix: string): string =
+    let filenameOnly = filenameBase.splitFile().name
+    result = filenameBase & "_frames" / filenameOnly & "_frame_" & suffix & ".svg"
 
   for i in 0 ..< numFrames:
-    let filename = filenameBase & "_frame_" & align($i, 4, '0') & ".svg"
+    let filename = svgFileName(align($i, 4, '0'))
     let nodes = builder(i)
     withFile(f, filename):
       f.write(nodes.render())
 
-  let pattern = filenameBase & "_frame_*.svg"
+  let pattern = svgFileName("*")
   let outFile = filenameBase & ".gif"
 
   var cmdElems = @[

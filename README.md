@@ -19,6 +19,7 @@ produces the following SVG:
 
 ```svg
 <?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <svg width="200" height="200">
   <circle cx="100" cy="100" r="80" stroke="teal" stroke-width="4" fill="#DDD"/>
 </svg>
@@ -32,7 +33,7 @@ The DSL allows to mix tag expressions with regular Nim expressions like variable
 which makes it easy to generate SVGs programmatically:
 
 ```nimrod
-import nimsvg, random, ospaths
+import nimsvg, ospaths, random
 
 buildSvgFile("examples" / sourceBaseName() & ".svg"):
   let size = 200
@@ -48,11 +49,30 @@ Output:
 
 ![basic2](https://rawgit.com/bluenote10/NimSvg/master/examples/basic2.svg?sanitize=true)
 
+NimSvg also allows to render a sequence of SVG files into an animated GIF (requires Imagemagick for the rendering):
+
+```nimrod
+import nimsvg, ospaths
+
+let numFrames = 100
+let settings = animSettings().backAndForth(true)
+
+buildAnimation("examples" / sourceBaseName(), numFrames, settings) do (i: int) -> Nodes:
+  let w = 200
+  let h = 200
+  buildSvg:
+    svg(width=w, height=h):
+      let r = 0.4 * w.float * i.float / numFrames.float + 10
+      circle(cx=w/2, cy=h/2, r=r, stroke="#445", `stroke-width`=4, fill="#EEF")
+```
+
+Output:
+
+[![animation1](examples/animation1.gif)](examples/animation1.nim)
+
 
 ## Gallery
 
 Click on an image to see the corresponding implementation.
 
-[![animation1](examples/anim1/anim1.gif)](examples/animation1.nim)
-
-[![animation2](examples/anim2/anim2.gif)](examples/animation2.nim)
+[![spinner1](examples/spinner1.gif)](examples/spinner1.nim)

@@ -19,5 +19,5 @@ task examples, "Runs examples":
   exec "nim c -r examples/basic2.nim"
   exec "nim c -r examples/text1.nim"
   exec "nim c -r examples/animation1.nim"
-  exec "nim c -r examples/animation2.nim"
+  exec "nim c -r examples/spinner1.nim"
   exec "nim c -r examples/dsl_demo.nim"

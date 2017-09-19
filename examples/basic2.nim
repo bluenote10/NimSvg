@@ -1,4 +1,4 @@
-import nimsvg, random, ospaths
+import nimsvg, ospaths, random
 
 buildSvgFile("examples" / sourceBaseName() & ".svg"):
   let size = 200
