@@ -76,3 +76,5 @@ Output:
 Click on an image to see the corresponding implementation.
 
 [![spinner1](examples/spinner1.gif)](examples/spinner1.nim)
+
+[![spinner2](examples/spinner2.gif)](examples/spinner2.nim)
