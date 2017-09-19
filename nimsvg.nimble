@@ -21,6 +21,7 @@ task examples, "Runs examples":
   exec "nim c -r examples/animation1.nim"
   exec "nim c -r examples/spinner1.nim"
   exec "nim c -r examples/spinner2.nim"
+  exec "nim c -r examples/spinner3.nim"
   exec "nim c -r examples/dsl_demo.nim"
 
 task docs, "Generates docs":

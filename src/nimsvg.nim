@@ -197,7 +197,7 @@ proc buildNodes(body: NimNode, level: int): NimNode =
 
   of nnkForStmt, nnkIfExpr, nnkElifExpr, nnkElseExpr,
       nnkOfBranch, nnkElifBranch, nnkExceptBranch, nnkElse,
-      nnkConstDef, nnkWhileStmt, nnkIdentDefs, nnkVarTuple:
+      nnkConstDef, nnkWhileStmt, nnkIdentDefs, nnkVarTuple, nnkBlockStmt:
     # recurse for the last son:
     result = copyNimTree(n)
     let L = n.len
