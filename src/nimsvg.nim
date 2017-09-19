@@ -32,7 +32,7 @@ proc newNode*(tag: string, attributes: Attributes): Node =
   Node(tag: tag, children: newSeq[Node](), attributes: attributes)
 
 
-proc prettyString*(n: Node, indent: int): string =
+proc prettyString(n: Node, indent: int): string =
   let pad = spaces(indent)
   result = pad & n.tag & "("
   if not n.attributes.isNil:
@@ -76,7 +76,7 @@ proc `$`*(nodes: Nodes): string =
     result &= n.prettyString(0)
 
 
-proc `[]`*(n: Node, i: int): Node = n.children[i]
+proc `[]`(n: Node, i: int): Node = n.children[i]
 
 
 proc `==`*(a, b: Node): bool =
@@ -305,10 +305,10 @@ proc backAndForth*(animSettings: AnimSettings, backAndForth: bool): AnimSettings
 
 proc buildAnimation*(filenameBase: string, numFrames: int, animSettings: AnimSettings = animSettings(), builder: int -> Nodes) =
   createDir(filenameBase & "_frames")
+  let filenameOnly = filenameBase.splitFile().name
 
   proc svgFileName(suffix: string): string =
-    let filenameOnly = filenameBase.splitFile().name
-    result = filenameBase & "_frames" / filenameOnly & "_frame_" & suffix & ".svg"
+    filenameBase & "_frames" / filenameOnly & "_frame_" & suffix & ".svg"
 
   for i in 0 ..< numFrames:
     let filename = svgFileName(align($i, 4, '0'))

@@ -4,7 +4,7 @@ Nim-based DSL allowing to generate SVG files and GIF animations.
 
 ## DSL
 
-NimSvg's DSL is inspired by [Karax](https://github.com/pragmagic/karax), and allows to generate SVG trees in a similar manner.
+NimSvg is inspired by [Karax](https://github.com/pragmagic/karax), and offers a similar DSL to generate SVG trees.
 A simple hello world
 
 ```nimrod
