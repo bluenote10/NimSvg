@@ -1,7 +1,7 @@
 import macros
 import strutils
 import sequtils
-import future
+import sugar
 import os
 
 
@@ -35,8 +35,7 @@ proc newNode*(tag: string, attributes: Attributes): Node =
 proc prettyString(n: Node, indent: int): string =
   let pad = spaces(indent)
   result = pad & n.tag & "("
-  if not n.attributes.isNil:
-    result &= $n.attributes.map(attr => attr[0] & "=" & attr[1]).join(", ")
+  result &= $n.attributes.map(attr => attr[0] & "=" & attr[1]).join(", ")
   result &= ")\n"
   for child in n.children:
     result &= prettyString(child, indent+2)
@@ -53,10 +52,10 @@ proc render*(nodes: Nodes, indent: int = 0): string =
     let pad = spaces(indent)
     if n.tag != "#text":
       result &= pad & "<" & n.tag
-      if not n.attributes.isNil and n.attributes.len > 0:
+      if n.attributes.len > 0:
         result &= " "
         result &= $n.attributes.map(attr => attr[0] & "=\"" & attr[1] & "\"").join(" ")
-      if not n.children.isNil and n.children.len > 0:
+      if n.children.len > 0:
         result &= ">\n"
         result &= render(n.children, indent+2)
         result &= pad & "</" & n.tag & ">\n"
