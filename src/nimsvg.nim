@@ -147,6 +147,12 @@ proc buildNodes(body: NimNode, level: int): NimNode =
     tmp.attributes = attrs
     tmp.children = childrenBlock
 
+  template appendElementNoChilren(tmp, tag, attrs) {.dirty.} =
+    bind newNode
+    let tmp = newNode(tag)
+    nodes.add(tmp)
+    tmp.attributes = attrs
+
   template embedSeq(nodesSeqExpr) {.dirty.} =
     for node in nodesSeqExpr:
       nodes.add(node)
@@ -170,9 +176,8 @@ proc buildNodes(body: NimNode, level: int): NimNode =
     elif tagStr == "t":
       let tmp = genSym(nskLet, "tmp")
       let tag = newStrLitNode("#text")
-      let childrenBlock = newEmptyNode()
       let attributes = dummyTextAttributes(n[1])
-      result = getAst(appendElement(tmp, tag, attributes, childrenBlock))
+      result = getAst(appendElementNoChilren(tmp, tag, attributes))
     else:
       # if the last element is an nnkStmtList (block argument)
       # => full recursion to build block statement for children
@@ -190,9 +195,8 @@ proc buildNodes(body: NimNode, level: int): NimNode =
     # there more important use cases. Maybe `embed` them?
     let tmp = genSym(nskLet, "tmp")
     let tag = newStrLitNode($n)
-    let childrenBlock = newEmptyNode()
     let attributes = newEmptyNode()
-    result = getAst(appendElement(tmp, tag, attributes, childrenBlock))
+    result = getAst(appendElementNoChilren(tmp, tag, attributes))
 
   of nnkForStmt, nnkIfExpr, nnkElifExpr, nnkElseExpr,
       nnkOfBranch, nnkElifBranch, nnkExceptBranch, nnkElse,
