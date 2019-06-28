@@ -140,6 +140,7 @@ proc buildNodesBlock(body: NimNode, level: int): NimNode
 
 proc buildNodes(body: NimNode, level: int): NimNode =
 
+  # TODO we could probably simplify these three templates into one?
   template appendElement(tmp, tag, attrs, childrenBlock) {.dirty.} =
     bind newNode
     let tmp = newNode(tag)
@@ -152,6 +153,11 @@ proc buildNodes(body: NimNode, level: int): NimNode =
     let tmp = newNode(tag)
     nodes.add(tmp)
     tmp.attributes = attrs
+
+  template appendElementNoChilrenNoAttrs(tmp, tag) {.dirty.} =
+    bind newNode
+    let tmp = newNode(tag)
+    nodes.add(tmp)
 
   template embedSeq(nodesSeqExpr) {.dirty.} =
     for node in nodesSeqExpr:
@@ -181,22 +187,19 @@ proc buildNodes(body: NimNode, level: int): NimNode =
     else:
       # if the last element is an nnkStmtList (block argument)
       # => full recursion to build block statement for children
-      let childrenBlock =
-        if n.len >= 2 and n[^1].kind == nnkStmtList:
-          buildNodesBlock(n[^1], level+1)
-        else:
-          newNimNode(nnkEmpty)
       let attributes = extractAttributes(n)
       # echo attributes.repr
-      # TODO: handle nil cases explicitly by constructing empty seqs to avoid nil issues
-      result = getAst(appendElement(tmp, tag, attributes, childrenBlock))
+      if n.len >= 2 and n[^1].kind == nnkStmtList:
+        let childrenBlock = buildNodesBlock(n[^1], level+1)
+        result = getAst(appendElement(tmp, tag, attributes, childrenBlock))
+      else:
+        result = getAst(appendElementNoChilren(tmp, tag, attributes))
   of nnkIdent:
     # Currently a single ident is treated as an empty tag. Not sure if
     # there more important use cases. Maybe `embed` them?
     let tmp = genSym(nskLet, "tmp")
     let tag = newStrLitNode($n)
-    let attributes = newEmptyNode()
-    result = getAst(appendElementNoChilren(tmp, tag, attributes))
+    result = getAst(appendElementNoChilrenNoAttrs(tmp, tag))
 
   of nnkForStmt, nnkIfExpr, nnkElifExpr, nnkElseExpr,
       nnkOfBranch, nnkElifBranch, nnkExceptBranch, nnkElse,
