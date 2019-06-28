@@ -70,6 +70,28 @@ Output:
 
 [![animation1](examples/animation1.gif)](examples/animation1.nim)
 
+### Special syntax
+
+- `t`: The `t` keyword can be used to create text nodes:
+  ```nim
+  let svg = buildSvg:
+    text(x=0, y=0):
+      t "Hello World"
+  ```
+
+
+- `embed`: The embed keyword can be used to embed the result of other nodes.
+  ```nim
+  proc sub(): Nodes = buildSvg:
+    c()
+    b()
+
+  let svg = buildSvg:
+    # produces tags <a><b><c><d>
+    a()
+    embed sub()
+    d()
+  ```
 
 ## Gallery
 
