@@ -83,8 +83,8 @@ Output:
 - `embed`: The embed keyword can be used to embed the result of other nodes.
   ```nim
   proc sub(): Nodes = buildSvg:
-    c()
     b()
+    c()
 
   let svg = buildSvg:
     # produces tags <a><b><c><d>
