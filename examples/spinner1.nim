@@ -11,7 +11,7 @@ buildAnimation("examples" / sourceBaseName(), settings) do (frame: int) -> Nodes
   let dotRadius = w / 40
   let circleRadius = 0.4 * w.float
   buildSvg:
-    svg(width=w, height=h, xmlns="http://www.w3.org/2000/svg", version="1.1", baseProfile="full"):
+    svg(width=w, height=h, baseProfile="full"):
       defs:
         filter(id="shadow", x="-200%", y="-200%", width="500%", height="500%"):
           feOffset(result="offOut", `in`="SourceAlpha", dx="2", dy="2")

@@ -10,6 +10,7 @@ import tables
 
 type
   Frame = object
+    name: string
     t1: float
     t2: float
 
@@ -33,7 +34,6 @@ type
   KeyPoint* = (string, Value)
 
 
-
 proc v*(s: string): Value =
   Value(kind: ValueKind.String, s: s)
 
@@ -47,15 +47,29 @@ proc val*(v: Value): string =
   of ValueKind.Float:
     $v.f
 
+proc frames*(frameTuples: openArray[tuple[name: string, t: float]]): seq[Frame] =
+  var frames = newSeq[Frame]()
+  for i in 0 ..< frameTuples.len:
+    let j = min(i + 1, frameTuples.len - 1)
+    let a = frameTuples[i]
+    let b = frameTuples[j]
+    frames.add(Frame(name: a.name, t1: a.t, t2: b.t))
+  echo frames
+  frames
 
-proc newTimeline*(gifFrameTime = 5): Timeline =
+
+proc newTimeline*(frames: openArray[Frame] = [], gifFrameTime = 5): Timeline =
+  var framesTable = newTable[string, Frame]()
+  for frame in frames:
+    framesTable[frame.name] = frame
+
   Timeline(
     gifFrameTime: gifFrameTime,
-    frames: newTable[string, Frame]()
+    frames: framesTable
   )
 
 proc addFrame*(t: var Timeline, name: string, t1: float, t2: float) =
-  t.frames[name] = Frame(t1: t1, t2: t2)
+  t.frames[name] = Frame(name: name, t1: t1, t2: t2)
 
 proc getMinMaxTime*(t: Timeline): (float, float) =
   var min = +Inf
@@ -111,7 +125,11 @@ proc parseTimeExpression(t: Timeline, texpr: string): TimeExpression =
   let frameName = fields[0]
   let isStart = if fields[1] == "s": true else: false
 
-  let frame = t.frames[frameName] # TODO robustify lookup
+  let frame =
+    try:
+      t.frames[frameName]
+    except KeyError:
+      raise newException(KeyError, &"Frame name '{frameName}' does not exist in lookup table")
 
   let t =
     if isStart:

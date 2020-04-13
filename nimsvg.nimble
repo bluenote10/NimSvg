@@ -23,6 +23,8 @@ task examples, "Runs examples":
   exec "nim c -r examples/spinner2.nim"
   exec "nim c -r examples/spinner3.nim"
   exec "nim c -r examples/dsl_demo.nim"
+  exec "nim c -r examples/timeline_ex1.nim"
+  exec "nim c -r examples/timeline_ex2.nim"
 
 task docs, "Generates docs":
   exec "nim doc2 --project --docSeeSrcUrl:https://github.com/bluenote10/NimSvg/blob/master -o:./docs/ src/nimsvg.nim"

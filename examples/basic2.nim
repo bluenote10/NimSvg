@@ -2,7 +2,7 @@ import nimsvg, ospaths, random
 
 buildSvgFile("examples" / sourceBaseName() & ".svg"):
   let size = 200
-  svg(width=size, height=size, xmlns="http://www.w3.org/2000/svg", version="1.1"):
+  svg(width=size, height=size):
     for _ in 0 .. 1000:
       let x = random(size)
       let y = random(size)

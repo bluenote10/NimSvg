@@ -52,9 +52,25 @@ proc render*(nodes: Nodes, indent: int = 0): string =
     let pad = spaces(indent)
     if n.tag != "#text":
       result &= pad & "<" & n.tag
-      if n.attributes.len > 0:
+
+      var attributes = n.attributes
+      if n.tag == "svg":
+        var hasXmlns = false
+        var hasVersion = false
+        for attr in attributes:
+          if attr[0] == "xmlns":
+            hasXmlns = true
+          if attr[0] == "version":
+            hasVersion = true
+        if not hasXmlns:
+          attributes.add(("xmlns", "http://www.w3.org/2000/svg"))
+        if not hasVersion:
+          attributes.add(("version", "1.1"))
+
+      if attributes.len > 0:
         result &= " "
-        result &= $n.attributes.map(attr => attr[0] & "=\"" & attr[1] & "\"").join(" ")
+        result &= $attributes.map(attr => attr[0] & "=\"" & attr[1] & "\"").join(" ")
+
       if n.children.len > 0:
         result &= ">\n"
         result &= render(n.children, indent+2)

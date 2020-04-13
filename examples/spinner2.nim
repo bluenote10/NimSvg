@@ -11,7 +11,7 @@ buildAnimation("examples" / sourceBaseName(), settings) do (frame: int) -> Nodes
   let tickLength = 0.05 * w.float
   let circleRadius = 0.4 * w.float
   buildSvg:
-    svg(width=w, height=h, xmlns="http://www.w3.org/2000/svg", version="1.1", baseProfile="full"):
+    svg(width=w, height=h, baseProfile="full"):
       for i in 0 ..< numTicks:
         let alpha = i / numTicks * 2 * PI
         let peakIndex = 1.0 - frame / settings.numFrames
