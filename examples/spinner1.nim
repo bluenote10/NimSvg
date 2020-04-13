@@ -1,8 +1,8 @@
-import nimsvg, ospaths, math
+import nimsvg, os, math
 
-let numFrames = 40
+let settings = animSettings(numFrames=40)
 
-buildAnimation("examples" / sourceBaseName(), numFrames, animSettings()) do (frame: int) -> Nodes:
+buildAnimation("examples" / sourceBaseName(), settings) do (frame: int) -> Nodes:
   let w = 200
   let h = 200
   let centerX = w / 2
@@ -21,7 +21,7 @@ buildAnimation("examples" / sourceBaseName(), numFrames, animSettings()) do (fra
         let alpha = i / numDots * 2 * PI
         let x = centerX + circleRadius * sin(alpha)
         let y = centerY + circleRadius * cos(alpha)
-        let peakIndex = 1.0 - frame / numFrames
+        let peakIndex = 1.0 - frame / settings.numFrames
         let frac = i / numDots
         let dist = [
           abs(peakIndex - frac),

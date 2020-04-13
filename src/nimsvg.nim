@@ -294,29 +294,31 @@ template buildSvgFile*(filename: string, body: untyped): untyped =
 # -----------------------------------------------------------------------------
 
 type
-  AnimSettings = object
-    backAndForth: bool
+  AnimSettings* = object
+    numFrames*: int
+    gifFrameTime*: int
+    backAndForth*: bool
 
 
-proc animSettings*(): AnimSettings =
+proc animSettings*(
+  numFrames: int,
+  gifFrameTime: int = 5,
+  backAndForth: bool = false,
+): AnimSettings =
   AnimSettings(
-    backAndForth: false
+    numFrames: numFrames,
+    gifFrameTime: gifFrameTime,
+    backAndForth: backAndForth,
   )
 
-
-proc backAndForth*(animSettings: AnimSettings, backAndForth: bool): AnimSettings =
-  result = animSettings
-  result.backAndForth = backAndForth
-
-
-proc buildAnimation*(filenameBase: string, numFrames: int, animSettings: AnimSettings = animSettings(), builder: int -> Nodes) =
+proc buildAnimation*(filenameBase: string, settings: AnimSettings, builder: int -> Nodes) =
   createDir(filenameBase & "_frames")
   let filenameOnly = filenameBase.splitFile().name
 
   proc svgFileName(suffix: string): string =
     filenameBase & "_frames" / filenameOnly & "_frame_" & suffix & ".svg"
 
-  for i in 0 ..< numFrames:
+  for i in 0 ..< settings.numFrames:
     let filename = svgFileName(align($i, 4, '0'))
     let nodes = builder(i)
     withFile(f, filename):
@@ -327,12 +329,12 @@ proc buildAnimation*(filenameBase: string, numFrames: int, animSettings: AnimSet
 
   var cmdElems = @[
     "convert",
-    "-delay", "5",
+    "-delay", $settings.gifFrameTime,
     "-loop", "0",
     "-dispose", "previous",
     pattern
   ]
-  if animSettings.backAndForth:
+  if settings.backAndForth:
     cmdElems &= @[
       "-reverse",
       pattern
