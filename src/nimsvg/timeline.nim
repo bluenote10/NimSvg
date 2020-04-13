@@ -7,7 +7,6 @@ import strutils
 import math
 import tables
 
-
 type
   Frame = object
     name: string
@@ -15,8 +14,6 @@ type
     t2: float
 
   Timeline* = object
-    i: int
-    t: float
     gifFrameTime: int
     frames: TableRef[string, Frame]
 
@@ -93,9 +90,10 @@ proc getTimeOfFrame*(t: Timeline, i: int): float =
 type
   Callback* = openArray[KeyPoint] -> string
 
-  FrameInfo* = object
+  TimelineFrame* = object
     i*: int
     t*: float
+    timeline: Timeline
 
   EaseKind {.pure.} = enum
     None,
@@ -123,7 +121,11 @@ proc computeEase(ease: Ease, x: float): float =
 proc parseTimeExpression(t: Timeline, texpr: string): TimeExpression =
   let fields = texpr.split()
   let frameName = fields[0]
-  let isStart = if fields[1] == "s": true else: false
+  let isStart =
+    if fields.len > 1 and fields[1].startsWith("e"):
+      false
+    else:
+      true
 
   let frame =
     try:
@@ -138,19 +140,18 @@ proc parseTimeExpression(t: Timeline, texpr: string): TimeExpression =
       frame.t2
 
   let ease =
-    if fields.len == 2:
-      Ease(kind: None)
+    if fields[^1] == "linear":
+      Ease(kind: Linear)
+    elif fields[^1] == "ease":
+      Ease(kind: InOutCubic)
     else:
-      if fields[2] == "linear":
-        Ease(kind: Linear)
-      else:
-        Ease(kind: InOutCubic)
+      Ease(kind: None)
   TimeExpression(t: t, ease: ease)
 
 
-proc splitTimeExprsAndValues(t: Timeline, keypoints: openArray[KeyPoint]): (seq[TimeExpression], seq[Value]) =
+proc splitTimeExprsAndValues[T](t: Timeline, keypoints: openArray[(string, T)]): (seq[TimeExpression], seq[T]) =
   var timeExprs = newSeqOfCap[TimeExpression](keypoints.len)
-  var values = newSeqOfCap[Value](keypoints.len)
+  var values = newSeqOfCap[T](keypoints.len)
   for keypoint in keypoints:
     let (texpr, value) = keypoint
     let timeExpr = t.parseTimeExpression(texpr)
@@ -159,41 +160,40 @@ proc splitTimeExprsAndValues(t: Timeline, keypoints: openArray[KeyPoint]): (seq[
   (timeExprs, values)
 
 
-proc createCallback(tl: Timeline, t: float): Callback =
+proc calc*[T](tlf: TimelineFrame, keypoints: openArray[(string, T)]): T =
+  let t = tlf.t
 
-  proc callback(keypoints: openArray[KeyPoint]): string =
-    let (times, values) = tl.splitTimeExprsAndValues(keypoints)
+  let (times, values) = tlf.timeline.splitTimeExprsAndValues(keypoints)
 
-    # May be replaced by binary search, but unlikely to hit performance issues here.
-    var j = 0
-    while j < times.len and t >= times[j].t:
-      j += 1
+  # May be replaced by binary search, but unlikely to hit performance issues here.
+  var j = 0
+  while j < times.len and t >= times[j].t:
+    j += 1
 
-    let jCurr = if j > 0: j - 1 else: 0
-    let jNext = if j < times.len: j else: times.len - 1
+  let jCurr = if j > 0: j - 1 else: 0
+  let jNext = if j < times.len: j else: times.len - 1
 
-    echo "times: ", times, " j = ", j, " jCurr = ", jCurr, " jNext = ", jNext
+  echo $T, " times: ", times, " j = ", j, " jCurr = ", jCurr, " jNext = ", jNext
 
-    if jCurr != jNext and times[jNext].ease.kind != EaseKind.None:
-      let ease = times[jNext].ease
-      let t1 = times[jCurr].t
-      let t2 = times[jNext].t
-      let relative = (t - t1) / (t2 - t1)
-      let v1 = values[jCurr]
-      let v2 = values[jNext]
-      if v1.kind == ValueKind.Float and v2.kind == ValueKind.Float:
-        let v = v1.f + (v2.f - v1.f) * ease.computeEase(relative)
-        echo &"relative = {relative}    v = {v}"
-        return $v
-      else:
-        values[jCurr].val
+  if jCurr != jNext and times[jNext].ease.kind != EaseKind.None:
+    let ease {.used.} = times[jNext].ease
+    let t1 = times[jCurr].t
+    let t2 = times[jNext].t
+    let relative {.used.} = (t - t1) / (t2 - t1)
+    let v1 {.used.} = values[jCurr]
+    let v2 {.used.} = values[jNext]
+    when T is float:
+      let v = v1 + (v2 - v1) * ease.computeEase(relative)
+      echo &"relative = {relative}    v = {v}"
+      return v
     else:
-      return values[jCurr].val
+      echo &"WARNING: Type {$(T)} cannot be interpolated."
+      values[jCurr]
+  else:
+    return values[jCurr]
 
-  return callback
 
-
-proc buildAnimation*(tl: Timeline, filenameBase: string, builder: (cb: Callback, fi: FrameInfo) -> Nodes) =
+proc buildAnimation*(tl: Timeline, filenameBase: string, builder: (tf: TimelineFrame) -> Nodes) =
   let numFrames = (tl.getDuration() / (0.01 * tl.gifFrameTime)).ceil().int + 1
   echo "Num required frames: ", numFrames
   echo "Timeline min: ": tl.getMinMaxTime()[0]
@@ -204,9 +204,7 @@ proc buildAnimation*(tl: Timeline, filenameBase: string, builder: (cb: Callback,
 
   buildAnimation(filenameBase, settings) do (i: int) -> Nodes:
     let t = tl.getTimeOfFrame(i)
-    let frameInfo = FrameInfo(i: i, t: t)
-    echo "\n", frameInfo
+    let frame = TimelineFrame(i: i, t: t, timeline: tl)
+    echo &"\ni = {frame.i}, t = {frame.t}"
 
-    let callback = tl.createCallback(t)
-
-    return builder(callback, frameInfo)
+    return builder(frame)

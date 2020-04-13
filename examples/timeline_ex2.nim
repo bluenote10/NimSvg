@@ -1,5 +1,5 @@
 import nimsvg
-import nimsvg_timeline
+import nimsvg/timeline
 import os
 import strformat
 import lenientops
@@ -28,13 +28,13 @@ let tl = newTimeline(
   gifFrameTime=2
 )
 
-tl.buildAnimation("examples" / sourceBaseName()) do (c: Callback, frameInfo: FrameInfo) -> Nodes:
+tl.buildAnimation("examples" / sourceBaseName()) do (f: TimelineFrame) -> Nodes:
   let w = 200
   let h = 200
   buildSvg:
     svg(width=w, height=h):
-      text(x=10, y=10): t: &"i = {frameInfo.i:03d} t = {frameInfo.t:.2f}"
-      rect(x=20, y=c([("f1 s", v(20)), ("f1 s ease", v(40)), ("f1 s ease", v(60))]))
+      text(x=10, y=10): t: &"i = {f.i:03d} t = {f.t:.2f}"
+      rect(x=20, y=f.calc({"f1 s": v(20), "f1 s ease": v(40), "f1 s ease": v(60)}))
       embed number(0, "4")
       embed number(1, "6")
       embed number(2, "8")
