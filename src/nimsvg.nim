@@ -102,7 +102,7 @@ proc `==`*(a, b: Node): bool =
 proc getName(n: NimNode): string =
   case n.kind
   of nnkIdent:
-    result = $n.ident
+    result = n.strVal
   of nnkAccQuoted:
     result = ""
     for i in 0..<n.len:
