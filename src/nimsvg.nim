@@ -189,9 +189,7 @@ proc buildNodes(body: NimNode, level: int): NimNode =
 
   case n.kind
   of nnkCallKindsNoInfix:
-    let tmp = genSym(nskLet, "tmp")
     let tagStr = $(n[0])
-    let tag = newStrLitNode(tagStr)
     if tagStr == "embed":
       let nodesSeqExpr = n[1]
       result = getAst(embedSeq(nodesSeqExpr))
@@ -203,6 +201,8 @@ proc buildNodes(body: NimNode, level: int): NimNode =
       let attributes = dummyTextAttributes(n[1])
       result = getAst(appendElementNoChilren(tmp, tag, attributes))
     else:
+      let tmp = genSym(nskLet, "tmp")
+      let tag = newStrLitNode(tagStr)
       # if the last element is an nnkStmtList (block argument)
       # => full recursion to build block statement for children
       let attributes = extractAttributes(n)
@@ -212,6 +212,7 @@ proc buildNodes(body: NimNode, level: int): NimNode =
         result = getAst(appendElement(tmp, tag, attributes, childrenBlock))
       else:
         result = getAst(appendElementNoChilren(tmp, tag, attributes))
+
   of nnkIdent:
     # Currently a single ident is treated as an empty tag. Not sure if
     # there more important use cases. Maybe `embed` them?
@@ -266,6 +267,7 @@ proc buildNodesBlock(body: NimNode, level: int): NimNode =
   result = getAst(resultTemplate(elements))
   when defined(debugDsl):
     if level == 0:
+      echo " --------- output ----------- "
       echo result.repr
 
 # -----------------------------------------------------------------------------
@@ -274,9 +276,8 @@ proc buildNodesBlock(body: NimNode, level: int): NimNode =
 
 macro buildSvg*(body: untyped): Nodes =
   when defined(debugDsl):
-    echo " --------- body ----------- "
+    echo " --------- input ----------- "
     echo body.treeRepr
-    echo " --------- body ----------- "
 
   let kids = newProc(procType=nnkDo, body=body)
   expectKind kids, nnkDo

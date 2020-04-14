@@ -1,7 +1,6 @@
 import nimsvg
 import unittest
 import os
-import ospaths
 
 
 proc verify(svg, exp: Nodes) =
@@ -131,6 +130,7 @@ suite "buildSvg":
       embed sub() & sub()
       embed(sub() & sub())
       embed withArg(2)
+      embed 2.withArg()
       y()
     let exp = @[
       newNode("x"),
@@ -139,9 +139,45 @@ suite "buildSvg":
       newNode("a"), newNode("b"), newNode("a"), newNode("b"),
       newNode("a"), newNode("b"), newNode("a"), newNode("b"),
       newNode("x", @[("x", "0")]), newNode("x", @[("x", "1")]), newNode("x", @[("x", "2")]),
+      newNode("x", @[("x", "0")]), newNode("x", @[("x", "1")]), newNode("x", @[("x", "2")]),
       newNode("y"),
     ]
     verify(svg, exp)
+
+  test "text":
+    block:
+      let svg = buildSvg:
+        text:
+          t "asdf"
+          t "sdfg"
+      let exp = @[
+        newNode("text", @[
+          newNode("#text", @{"text": "asdf"}),
+          newNode("#text", @{"text": "sdfg"}),
+        ])
+      ]
+      verify(svg, exp)
+    block:
+      let svg = buildSvg:
+        t "asdf" & "asdf"
+        t("asdf" & "asdf")
+        t: "asdf" & "asdf"
+        t(): "asdf" & "asdf"
+        t:
+          "a" &
+          "b"
+        t():
+          "a" &
+          "b"
+      let exp = @[
+        newNode("#text", @[("text", "asdfasdf")]),
+        newNode("#text", @[("text", "asdfasdf")]),
+        newNode("#text", @[("text", "asdfasdf")]),
+        newNode("#text", @[("text", "asdfasdf")]),
+        newNode("#text", @[("text", "ab")]),
+        newNode("#text", @[("text", "ab")]),
+      ]
+      verify(svg, exp)
 
 
 suite "buildSvgFile":
