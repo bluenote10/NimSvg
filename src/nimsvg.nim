@@ -4,6 +4,8 @@ import sequtils
 import sugar
 import os
 
+import nimsvg/utils
+import nimsvg/html_writer
 
 # -----------------------------------------------------------------------------
 # XML Node stuff
@@ -281,17 +283,6 @@ macro buildSvg*(body: untyped): Nodes =
   result = buildNodesBlock(body(kids), 0)
 
 
-template withFile(f, fn, body: untyped): untyped =
-  var f: File
-  if open(f, fn, fmWrite):
-    try:
-      body
-    finally:
-      close(f)
-  else:
-    quit("cannot open: " & fn)
-
-
 proc ensureParentDirExists(filename: string) =
   let parent = parentDir(filename)
   if parent != "":
@@ -334,11 +325,17 @@ proc buildAnimation*(filenameBase: string, settings: AnimSettings, builder: int 
   proc svgFileName(suffix: string): string =
     filenameBase & "_frames" / filenameOnly & "_frame_" & suffix & ".svg"
 
+  var htmlWriter = HtmlWriter()
+
   for i in 0 ..< settings.numFrames:
     let filename = svgFileName(align($i, 4, '0'))
     let nodes = builder(i)
+    let svgCode = nodes.render()
     withFile(f, filename):
-      f.write(nodes.render())
+      f.write(svgCode)
+    htmlWriter.addFrame(svgCode)
+
+  htmlWriter.writeHtml(filenameBase & ".html")
 
   let pattern = svgFileName("*")
   let outFile = filenameBase & ".gif"
