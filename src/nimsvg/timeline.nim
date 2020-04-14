@@ -160,6 +160,19 @@ proc splitTimeExprsAndValues[T](t: Timeline, keypoints: openArray[(string, T)]):
   (timeExprs, values)
 
 
+proc interpolate*(a: float, b: float, r: float): float =
+  a + (b - a) * r
+
+proc interpolate*[A, B](a: (A, B), b: (A, B), r: float): (A, B) =
+  (interpolate(a[0], b[0], r), interpolate(a[1], b[1], r))
+
+proc interpolate*[A, B, C](a: (A, B, C), b: (A, B, C), r: float): (A, B, C) =
+  (interpolate(a[0], b[0], r), interpolate(a[1], b[1], r), interpolate(a[2], b[2], r))
+
+proc interpolate*[T: not tuple](a: T, b: T, r: float): T =
+  echo &"WARNING: Type {$(T)} cannot be interpolated."
+  a
+
 proc calc*[T](tlf: TimelineFrame, keypoints: openArray[(string, T)]): T =
   let t = tlf.t
 
@@ -182,13 +195,7 @@ proc calc*[T](tlf: TimelineFrame, keypoints: openArray[(string, T)]): T =
     let relative {.used.} = (t - t1) / (t2 - t1)
     let v1 {.used.} = values[jCurr]
     let v2 {.used.} = values[jNext]
-    when T is float:
-      let v = v1 + (v2 - v1) * ease.computeEase(relative)
-      echo &"relative = {relative}    v = {v}"
-      return v
-    else:
-      echo &"WARNING: Type {$(T)} cannot be interpolated."
-      values[jCurr]
+    return interpolate(v1, v2, ease.computeEase(relative))
   else:
     return values[jCurr]
 
