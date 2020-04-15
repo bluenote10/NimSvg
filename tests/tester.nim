@@ -179,6 +179,30 @@ suite "buildSvg":
       ]
       verify(svg, exp)
 
+  test "... attributes syntax":
+    block:
+      let svg = buildSvg:
+        g(... @{"attr": "value"})
+      let exp = @[
+        newNode("g", @{"attr": "value"})
+      ]
+      verify(svg, exp)
+    block:
+      let svg = buildSvg:
+        g(... @{"attr": "value"}, attr="value2")
+      let exp = @[
+        newNode("g", @{"attr": "value", "attr": "value2"})
+      ]
+      verify(svg, exp)
+    block:
+      let attrs = @{"attr": "value"}
+      let svg = buildSvg:
+        g(... attrs, attr="value2")
+      let exp = @[
+        newNode("g", @{"attr": "value", "attr": "value2"})
+      ]
+      verify(svg, exp)
+
 
 suite "buildSvgFile":
 

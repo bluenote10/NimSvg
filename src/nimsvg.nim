@@ -1,5 +1,6 @@
 import macros
 import strutils
+import strformat
 import sequtils
 import sugar
 import os
@@ -135,15 +136,35 @@ proc getName(n: NimNode): string =
 proc extractAttributes(n: NimNode): NimNode =
   ## Extracts named parameters from a callkind node and
   ## converts it to a seq[(str, str)] ast.
-  result = newCall("@", newNimNode(nnkBracket))
+  var baseAttributes: NimNode = nil
+  var seqAst = newCall("@", newNimNode(nnkBracket))
+  var seqAstLen = 0
+
   for i in 1 ..< n.len:
     let x = n[i]
     if x.kind == nnkExprEqExpr:
       let key = x[0].getName
       let value = newCall("$", x[1])
       let tupleExpr = newPar(newStrLitNode(key), value)
-      result[1].add(tupleExpr)
+      seqAst[1].add(tupleExpr)
+      seqAstLen += 1
+    elif x.kind == nnkPrefix and x[0].strVal == "...":
+      if i != 1:
+        error("... expression is only allowed as first child", x)
+      baseAttributes = x[1]
+    elif x.kind == nnkStmtList:
+      # Allow for "function bodies"
+      continue
+    else:
+      error(&"Expected an 'attribute=value' expression, got node kind {x.kind} in '{x.repr()}'", x)
 
+  if baseAttributes.isNil:
+    result = seqAst
+  elif seqAstLen == 0:
+    # concat does not make sense if seqAst is empty
+    result = baseAttributes
+  else:
+    result = newCall(bindSym"concat", baseAttributes, seqAst)
 
 proc dummyTextAttributes(text: NimNode): NimNode =
   result = newCall("@", newNimNode(nnkBracket))
@@ -304,12 +325,14 @@ template buildSvgFile*(filename: string, body: untyped): untyped =
 type
   AnimSettings* = object
     numFrames*: int
+    renderGif*: bool
     gifFrameTime*: int
     backAndForth*: bool
 
 
 proc animSettings*(
   numFrames: int,
+  renderGif: bool = false,
   gifFrameTime: int = 5,
   backAndForth: bool = false,
 ): AnimSettings =
@@ -323,13 +346,13 @@ proc buildAnimation*(filenameBase: string, settings: AnimSettings, builder: int 
   createDir(filenameBase & "_frames")
   let filenameOnly = filenameBase.splitFile().name
 
-  proc svgFileName(suffix: string): string =
+  proc svgFrameFileName(suffix: string): string =
     filenameBase & "_frames" / filenameOnly & "_frame_" & suffix & ".svg"
 
   var htmlWriter = HtmlWriter()
 
   for i in 0 ..< settings.numFrames:
-    let filename = svgFileName(align($i, 4, '0'))
+    let filename = svgFrameFileName(align($i, 4, '0'))
     let nodes = builder(i)
     let svgCode = nodes.render()
     withFile(f, filename):
@@ -338,27 +361,28 @@ proc buildAnimation*(filenameBase: string, settings: AnimSettings, builder: int 
 
   htmlWriter.writeHtml(filenameBase & ".html")
 
-  let pattern = svgFileName("*")
-  let outFile = filenameBase & ".gif"
+  if settings.renderGif:
+    let pattern = svgFrameFileName("*")
+    let outFile = filenameBase & ".gif"
 
-  var cmdElems = @[
-    "convert",
-    "-delay", $settings.gifFrameTime,
-    "-loop", "0",
-    "-dispose", "previous",
-    pattern
-  ]
-  if settings.backAndForth:
-    cmdElems &= @[
-      "-reverse",
+    var cmdElems = @[
+      "convert",
+      "-delay", $settings.gifFrameTime,
+      "-loop", "0",
+      "-dispose", "previous",
       pattern
     ]
-  cmdElems &= outfile
+    if settings.backAndForth:
+      cmdElems &= @[
+        "-reverse",
+        pattern
+      ]
+    cmdElems &= outfile
 
-  let cmd = cmdElems.join(" ")
+    let cmd = cmdElems.join(" ")
 
-  echo "Running: ", cmd
-  discard execShellCmd(cmd)
+    echo "Running: ", cmd
+    discard execShellCmd(cmd)
 
 
 # -----------------------------------------------------------------------------
