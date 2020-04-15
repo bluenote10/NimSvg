@@ -1,4 +1,7 @@
 import nimsvg
+import nimsvg/styles
+
+import options
 import unittest
 import os
 
@@ -215,3 +218,20 @@ suite "buildSvgFile":
     setCurrentDir(getTempDir() / "nimSvgTest")
     buildSvgFile("test.svg"):
       svg(width=100, height=100)
+
+
+suite "styles":
+
+  test "getter/setter/unsetter":
+    let s = defaultStyle()
+    check s.stroke.isSome()
+    check s.noStroke.stroke.isNone()
+
+    check s.strokeWidth("asdf").strokeWidth() == some("asdf")
+    check s.strokeWidth(3.0).strokeWidth() == some("3.0")
+
+  test "attributes":
+    let s = Style()
+    check s.getAttributes().len() == 0
+    check s.fill("#000").getAttributes() == @[("fill", "#000")]
+

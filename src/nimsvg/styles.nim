@@ -1,16 +1,21 @@
 import nimsvg
+import options
+import better_options
+
+# General reference:
+# https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute
 
 type
   Style* = object
-    fill: string
-    stroke: string
-    strokeWidth: string
+    fill: Option[string]
+    stroke: Option[string]
+    strokeWidth: Option[string]
 
-    fontSize: string
-    fontFamily: string
-    textAnchor: string
-    dominantBaseline: string
-    paintOrder: string
+    fontSize: Option[string]
+    fontFamily: Option[string]
+    textAnchor: Option[string]
+    dominantBaseline: Option[string]
+    paintOrder: Option[string]
 
 #[
 proc with*(
@@ -34,58 +39,88 @@ proc with*(
   )
 ]#
 
-template makeSetter(funcname, field) =
-  proc funcname*(s: Style, field: string): Style =
+template makeGetterSetter(field) =
+
+  proc field*(s: Style): Option[string] =
+    s.field
+
+  proc field*[T](s: Style, x: T): Style =
     result = s
-    result.field = field
+    result.field = some($x)
 
-makeSetter(withfill, fill)
-makeSetter(withStroke, stroke)
-makeSetter(withStrokeWidth, strokeWidth)
+  proc `no field`*(s: Style): Style =
+    result = s
+    result.field = none[string]()
 
-makeSetter(withFontSize, fontSize)
-makeSetter(withFontFamily, fontFamily)
-makeSetter(withTextAnchor, textAnchor)
-makeSetter(withDominantBaseline, dominantBaseline)
+
+makeGetterSetter(fill)
+makeGetterSetter(stroke)
+makeGetterSetter(strokeWidth)
+
+makeGetterSetter(fontSize)
+makeGetterSetter(fontFamily)
+makeGetterSetter(textAnchor)
+makeGetterSetter(dominantBaseline)
+makeGetterSetter(paintOrder)
+
 
 proc withTextAlignLeft*(s: Style): Style =
   result = s
-  result.textAnchor = "start"
+  result.textAnchor = some("start")
 
 proc withTextAlignCenter*(s: Style): Style =
   result = s
-  result.textAnchor = "middle"
+  result.textAnchor = some("middle")
 
 proc withTextAlignRight*(s: Style): Style =
   result = s
-  result.textAnchor = "end"
+  result.textAnchor = some("end")
 
 proc withPaintOrderStroke*(s: Style): Style =
   result = s
-  result.paintOrder = "stroke"
+  result.paintOrder = some("stroke")
+
+
+proc getAttributes*(s: Style): seq[(string, string)] =
+  var attrs = newSeq[(string, string)]()
+
+  for fill in s.fill:
+    attrs.add(("fill", fill))
+  for stroke in s.stroke:
+    attrs.add(("stroke", stroke))
+  for strokeWidth in s.strokeWidth:
+    attrs.add(("stroke-width", strokeWidth))
+
+  for fontSize in s.fontSize:
+    attrs.add(("font-size", fontSize))
+  for fontFamily in s.fontFamily:
+    attrs.add(("font-family", fontFamily))
+  for textAnchor in s.textAnchor:
+    attrs.add(("text-anchor", textAnchor))
+  for dominantBaseline in s.dominantBaseline:
+    attrs.add(("dominant-baseline", dominantBaseline))
+  for paintOrder in s.paintOrder:
+    attrs.add(("paint-order", paintOrder))
+
+  attrs
+
 
 proc text*(s: Style, x: float, y: float, text: string): Nodes =
   buildSvg:
     text(
+      ... s.getAttributes(),
       x=x,
       y=y,
-      fill=s.fill,
-      stroke=s.stroke,
-      `text-anchor`=s.textAnchor,
-      `dominant-baseline`=s.dominantBaseline,
-      `font-size`=s.fontSize,
-      `font-family`=s.fontFamily,
-      `paint-order`=s.paintOrder,
     ): t(text)
 
 proc defaultStyle*(): Style =
   Style(
-    stroke: "#3333333",
-    fill: "#555555",
-    strokeWidth: "1px",
-    fontSize: "16",
-    fontFamily: "Ubuntu",
-    textAnchor: "middle",
-    dominantBaseline: "middle",
-    paintOrder: "normal",
+    stroke: some("#3333333"),
+    fill: some("#555555"),
+    strokeWidth: some("1px"),
+    fontSize: some("16"),
+    fontFamily: some("Ubuntu"),
+    textAnchor: some("middle"),
+    dominantBaseline: some("middle"),
+    paintOrder: some("normal"),
   )

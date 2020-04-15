@@ -71,6 +71,11 @@ proc render*(nodes: Nodes, indent: int = 0): string =
           attributes.add(("version", "1.1"))
 
       if attributes.len > 0:
+        # TODO: Since attributes are just seqs of (string, string) tuples, it is possible
+        # to have the same attribute twice, which is not valid XML. We should filter them
+        # to unique attributes. In case of duplicates we should use "later overwrites earlier"
+        # semantics, because the "... attributes" syntax prepends other manually specified
+        # attributes that should have precedence.
         result &= " "
         result &= $attributes.map(attr => attr[0] & "=\"" & attr[1] & "\"").join(" ")
 

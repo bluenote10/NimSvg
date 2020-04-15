@@ -12,7 +12,7 @@ proc number(xy: (float, float), val: string): Nodes =
   let (x, y) = xy
   buildSvg:
     rect(x=x-(w/2), y=y-(w/2), rx=4, width=w, height=w, stroke="#333", `stroke-width`=1, fill="#FBFBFF")
-    embed style.withFontSize("25").withFill("#444").withStroke("#111").text(x, y, val)
+    embed style.fontSize(16).fill("#444").stroke("#111").text(x, y, val)
 
 
 let frameTime = 0.5
@@ -40,7 +40,7 @@ tl.buildAnimation("examples" / sourceBaseName()) do (f: TimelineFrame) -> Nodes:
   let h = 300
   buildSvg:
     svg(width=w, height=h):
-      embed style.withFontSize("10").withTextAlignLeft().text(x=10, y=290, &"Created with NimSVG (frame: {f.i:03d}, time: {f.t:.2f})")
+      embed style.fontSize("10").withTextAlignLeft().text(x=10, y=290, &"Created with NimSVG (frame: {f.i:03d}, time: {f.t:.2f})")
       rect(x=20, y=f.calc({"f1 s": v(20), "f1 s ease": v(40), "f1 s ease": v(60)}))
       embed number(f.calc(pos4), "4")
       embed number(f.calc(pos5), "5")
