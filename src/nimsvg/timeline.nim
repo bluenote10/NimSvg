@@ -17,32 +17,6 @@ type
     gifFrameTime: int
     frames: TableRef[string, Frame]
 
-  ValueKind* {.pure.} = enum
-    String,
-    Float,
-
-  Value* = object
-    case kind: ValueKind
-    of String:
-      s: string
-    of Float:
-      f: float
-
-  KeyPoint* = (string, Value)
-
-
-proc v*(s: string): Value =
-  Value(kind: ValueKind.String, s: s)
-
-proc v*(f: float): Value =
-  Value(kind: ValueKind.Float, f: f)
-
-proc val*(v: Value): string =
-  case v.kind
-  of ValueKind.String:
-    v.s
-  of ValueKind.Float:
-    $v.f
 
 proc frames*(frameTuples: openArray[tuple[name: string, t: float]]): seq[Frame] =
   var frames = newSeq[Frame]()
@@ -88,8 +62,6 @@ proc getTimeOfFrame*(t: Timeline, i: int): float =
 
 
 type
-  Callback* = openArray[KeyPoint] -> string
-
   TimelineFrame* = object
     i*: int
     t*: float

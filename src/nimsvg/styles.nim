@@ -17,6 +17,8 @@ type
     dominantBaseline: Option[string]
     paintOrder: Option[string]
 
+    rx: Option[string]
+
 #[
 proc with*(
   style: Style,
@@ -63,6 +65,8 @@ makeGetterSetter(textAnchor)
 makeGetterSetter(dominantBaseline)
 makeGetterSetter(paintOrder)
 
+makeGetterSetter(rx)
+
 
 proc withTextAlignLeft*(s: Style): Style =
   result = s
@@ -102,6 +106,9 @@ proc getAttributes*(s: Style): seq[(string, string)] =
   for paintOrder in s.paintOrder:
     attrs.add(("paint-order", paintOrder))
 
+  for rx in s.rx:
+    attrs.add(("rx", rx))
+
   attrs
 
 
@@ -113,11 +120,17 @@ proc text*(s: Style, x: float, y: float, text: string): Nodes =
       y=y,
     ): t(text)
 
+proc rectCentered*(s: Style, x: float, y: float, w: float, h: float): Nodes =
+  buildSvg:
+    rect(... s.getAttributes(), x=x-(w/2), y=y-(h/2), width=w, height=w)
+
+
+
 proc defaultStyle*(): Style =
   Style(
     stroke: some("#3333333"),
     fill: some("#555555"),
-    strokeWidth: some("1px"),
+    strokeWidth: some("1"),
     fontSize: some("16"),
     fontFamily: some("Ubuntu"),
     textAnchor: some("middle"),
