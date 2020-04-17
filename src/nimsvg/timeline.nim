@@ -18,14 +18,21 @@ type
     frames: TableRef[string, Frame]
 
 
-proc frames*(frameTuples: openArray[tuple[name: string, t: float]]): seq[Frame] =
+proc frames*(frameTuples: openArray[tuple[name: string, t: float]], accumulateTimes = true): seq[Frame] =
   var frames = newSeq[Frame]()
-  for i in 0 ..< frameTuples.len:
-    let j = min(i + 1, frameTuples.len - 1)
-    let a = frameTuples[i]
-    let b = frameTuples[j]
-    frames.add(Frame(name: a.name, t1: a.t, t2: b.t))
-  echo frames
+  if not accumulateTimes:
+    for i in 0 ..< frameTuples.len:
+      let j = min(i + 1, frameTuples.len - 1)
+      let a = frameTuples[i]
+      let b = frameTuples[j]
+      frames.add(Frame(name: a.name, t1: a.t, t2: b.t))
+  else:
+    var t = 0.0
+    for i in 0 ..< frameTuples.len:
+      let a = t
+      let b = t + frameTuples[i].t
+      frames.add(Frame(name: frameTuples[i].name, t1: a, t2: b))
+      t += frameTuples[i].t
   frames
 
 
@@ -94,7 +101,7 @@ proc parseTimeExpression(t: Timeline, texpr: string): TimeExpression =
   let fields = texpr.split()
   let frameName = fields[0]
   let isStart =
-    if fields.len > 1 and fields[1].startsWith("e"):
+    if fields.len > 1 and fields[1].startsWith("end"):
       false
     else:
       true
@@ -142,7 +149,6 @@ proc interpolate*[A, B, C](a: (A, B, C), b: (A, B, C), r: float): (A, B, C) =
   (interpolate(a[0], b[0], r), interpolate(a[1], b[1], r), interpolate(a[2], b[2], r))
 
 proc interpolate*[T: not tuple](a: T, b: T, r: float): T =
-  echo &"WARNING: Type {$(T)} cannot be interpolated."
   a
 
 proc calc*[T](tlf: TimelineFrame, keypoints: openArray[(string, T)]): T =
@@ -158,7 +164,7 @@ proc calc*[T](tlf: TimelineFrame, keypoints: openArray[(string, T)]): T =
   let jCurr = if j > 0: j - 1 else: 0
   let jNext = if j < times.len: j else: times.len - 1
 
-  echo $T, " times: ", times, " j = ", j, " jCurr = ", jCurr, " jNext = ", jNext
+  # echo $T, " times: ", times, " j = ", j, " jCurr = ", jCurr, " jNext = ", jNext
 
   if jCurr != jNext and times[jNext].ease.kind != EaseKind.None:
     let ease {.used.} = times[jNext].ease
@@ -184,6 +190,6 @@ proc buildAnimation*(tl: Timeline, filenameBase: string, builder: (tf: TimelineF
   buildAnimation(filenameBase, settings) do (i: int) -> Nodes:
     let t = tl.getTimeOfFrame(i)
     let frame = TimelineFrame(i: i, t: t, timeline: tl)
-    echo &"\ni = {frame.i}, t = {frame.t}"
+    # echo &"\ni = {frame.i}, t = {frame.t}"
 
     return builder(frame)

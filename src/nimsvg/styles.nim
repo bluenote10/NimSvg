@@ -10,6 +10,8 @@ type
     fill: Option[string]
     stroke: Option[string]
     strokeWidth: Option[string]
+    fillOpacity: Option[string]
+    strokeOpacity: Option[string]
 
     fontSize: Option[string]
     fontFamily: Option[string]
@@ -58,6 +60,8 @@ template makeGetterSetter(field) =
 makeGetterSetter(fill)
 makeGetterSetter(stroke)
 makeGetterSetter(strokeWidth)
+makeGetterSetter(fillOpacity)
+makeGetterSetter(strokeOpacity)
 
 makeGetterSetter(fontSize)
 makeGetterSetter(fontFamily)
@@ -94,6 +98,10 @@ proc getAttributes*(s: Style): seq[(string, string)] =
     attrs.add(("stroke", stroke))
   for strokeWidth in s.strokeWidth:
     attrs.add(("stroke-width", strokeWidth))
+  for fillOpacity in s.fillOpacity:
+    attrs.add(("fill-opacity", fillOpacity))
+  for strokeOpacity in s.strokeOpacity:
+    attrs.add(("stroke-opacity", strokeOpacity))
 
   for fontSize in s.fontSize:
     attrs.add(("font-size", fontSize))
@@ -124,6 +132,9 @@ proc rectCentered*(s: Style, x: float, y: float, w: float, h: float): Nodes =
   buildSvg:
     rect(... s.getAttributes(), x=x-(w/2), y=y-(h/2), width=w, height=w)
 
+proc circle*(s: Style, x: float, y: float, r: float): Nodes =
+  buildSvg:
+    circle(... s.getAttributes(), cx=x, cy=y, r=r)
 
 
 proc defaultStyle*(): Style =
