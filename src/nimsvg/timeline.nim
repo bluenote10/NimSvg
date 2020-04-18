@@ -6,6 +6,7 @@ import lenientops
 import strutils
 import math
 import tables
+import re
 
 type
   Frame = object
@@ -79,52 +80,115 @@ type
     Linear,
     InOutCubic
 
-  Ease = object
-    case kind: EaseKind
-    of None, Linear, InOutCubic:
-      discard
-
   TimeExpression = object
     t: float
-    ease: Ease
+    ease: EaseKind
 
-proc computeEase(ease: Ease, x: float): float =
+proc computeEase(ease: EaseKind, x: float): float =
   # https://gist.github.com/gre/1650294#file-easing-js-L13
-  case ease.kind
+  case ease
   of None, Linear:
     x
   of EaseKind.InOutCubic:
     if x < 0.5: 4*x*x*x else: (x-1)*(2*x-2)*(2*x-2)+1
 
 
-proc parseTimeExpression(t: Timeline, texpr: string): TimeExpression =
-  let fields = texpr.split()
-  let frameName = fields[0]
-  let isStart =
-    if fields.len > 1 and fields[1].startsWith("end"):
-      false
-    else:
-      true
+type
+  TimeRefineKind {.pure.} = enum
+    None, Sec, Pct, Mid, End, Before, After
+
+  ParsedTimeExpressionComponents = tuple
+    frameName: string
+    timeRefineKind: TimeRefineKind
+    timeRefineValue: float
+    easeName: string
+
+let timeExpressionRegex = re"^([^\s\[]*)\s*(?:\[(.*)\])?\s*(\S*)$"
+let timeRefineRegex = re"^(mid|end|before|after|([-\.0-9]+)\s*(s|%))$"
+
+proc parseTimeExpressionComponents(texpr: string): ParsedTimeExpressionComponents =
+
+  if texpr =~ timeExpressionRegex:
+    # cho matches
+    let frameName = matches[0]
+    let timeRefineExpr = matches[1]
+    let easeName = matches[2]
+
+    var timeRefineKind = TimeRefineKind.None
+    var timeRefineValue = 0.0
+
+    if timeRefineExpr != "":
+      if timeRefineExpr =~ timeRefineRegex:
+        if matches[0] == "mid":
+          timeRefineKind = TimeRefineKind.Mid
+        elif matches[0] == "end":
+          timeRefineKind = TimeRefineKind.End
+        elif matches[0] == "before":
+          timeRefineKind = TimeRefineKind.Before
+        elif matches[0] == "after":
+          timeRefineKind = TimeRefineKind.After
+        elif matches[1] != "" and matches[2] != "":
+          # unit
+          if matches[2] == "s":
+            timeRefineKind = TimeRefineKind.Sec
+          elif matches[2] == "%":
+            timeRefineKind = TimeRefineKind.Pct
+          else:
+            raise newException(ValueError, &"Invalid time refine unit: '{matches[2]}'")
+          # value
+          timeRefineValue = parseFloat(matches[1])
+
+    return (
+      frameName: frameName,
+      timeRefineKind: timeRefineKind,
+      timeRefineValue: timeRefineValue,
+      easeName: easeName,
+    )
+
+  else:
+    raise newException(ValueError, &"Invalid time expression: '{texpr}'")
+
+
+proc parseTimeExpression(tl: Timeline, texpr: string): TimeExpression =
+
+  let components = parseTimeExpressionComponents(texpr)
+  let frameName = components.frameName
 
   let frame =
     try:
-      t.frames[frameName]
+      tl.frames[frameName]
     except KeyError:
       raise newException(KeyError, &"Frame name '{frameName}' does not exist in lookup table")
 
   let t =
-    if isStart:
+    case components.timeRefineKind
+    of TimeRefineKind.None:
       frame.t1
-    else:
+    of TimeRefineKind.Mid:
+      (frame.t1 + frame.t2) / 2.0
+    of TimeRefineKind.End:
       frame.t2
+    of TimeRefineKind.Pct:
+      frame.t1 + (components.timeRefineValue / 100.0) * (frame.t2 - frame.t1)
+    of TimeRefineKind.Sec:
+      frame.t1 + components.timeRefineValue
+    of TimeRefineKind.Before:
+      frame.t1 - (tl.gifFrameTime * 0.01) / 2
+    of TimeRefineKind.After:
+      frame.t1 + (tl.gifFrameTime * 0.01) / 2
+
 
   let ease =
-    if fields[^1] == "linear":
-      Ease(kind: Linear)
-    elif fields[^1] == "ease":
-      Ease(kind: InOutCubic)
+    case components.easeName
+    of "":
+      EaseKind.None
+    of "linear":
+      EaseKind.Linear
+    of "ease":
+      EaseKind.InOutCubic
     else:
-      Ease(kind: None)
+      raise newException(ValueError, &"Illegal ease value: '{components.easeName}'")
+
   TimeExpression(t: t, ease: ease)
 
 
@@ -193,3 +257,81 @@ proc buildAnimation*(tl: Timeline, filenameBase: string, builder: (tf: TimelineF
     # echo &"\ni = {frame.i}, t = {frame.t}"
 
     return builder(frame)
+
+
+when defined(unittest):
+  import unittest
+
+  suite "timeline":
+
+    test "parseTimeExpressionComponents":
+
+      check parseTimeExpressionComponents("f1.name") == (
+        frameName: "f1.name",
+        timeRefineKind: TimeRefineKind.None,
+        timeRefineValue: 0.0,
+        easeName: "",
+      )
+      check parseTimeExpressionComponents("f1.name ") == (
+        frameName: "f1.name",
+        timeRefineKind: TimeRefineKind.None,
+        timeRefineValue: 0.0,
+        easeName: "",
+      )
+      check parseTimeExpressionComponents("f1.name   someEase") == (
+        frameName: "f1.name",
+        timeRefineKind: TimeRefineKind.None,
+        timeRefineValue: 0.0,
+        easeName: "someEase",
+      )
+      check parseTimeExpressionComponents("f1.name[0.5s]") == (
+        frameName: "f1.name",
+        timeRefineKind: TimeRefineKind.Sec,
+        timeRefineValue: 0.5,
+        easeName: "",
+      )
+      check parseTimeExpressionComponents("f1.name[0.5 s]") == (
+        frameName: "f1.name",
+        timeRefineKind: TimeRefineKind.Sec,
+        timeRefineValue: 0.5,
+        easeName: "",
+      )
+      check parseTimeExpressionComponents("f1.name[0.5%]") == (
+        frameName: "f1.name",
+        timeRefineKind: TimeRefineKind.Pct,
+        timeRefineValue: 0.5,
+        easeName: "",
+      )
+      check parseTimeExpressionComponents("f1.name[0.5 %]") == (
+        frameName: "f1.name",
+        timeRefineKind: TimeRefineKind.Pct,
+        timeRefineValue: 0.5,
+        easeName: "",
+      )
+      check parseTimeExpressionComponents("f1.name[0.5 s]   someEase") == (
+        frameName: "f1.name",
+        timeRefineKind: TimeRefineKind.Sec,
+        timeRefineValue: 0.5,
+        easeName: "someEase",
+      )
+
+    test "parseTimeExpression":
+      let tl = newTimeLine(frames({
+        "f1": 5.0,
+      }), gifFrameTime=1)
+
+      check tl.parseTimeExpression("f1") == TimeExpression(t: 0.0, ease: EaseKind.None)
+      check tl.parseTimeExpression("f1[mid]") == TimeExpression(t: 2.5, ease: EaseKind.None)
+      check tl.parseTimeExpression("f1[end]") == TimeExpression(t: 5.0, ease: EaseKind.None)
+
+      check tl.parseTimeExpression("f1[-10%]") == TimeExpression(t: -0.5, ease: EaseKind.None)
+      check tl.parseTimeExpression("f1[-10 %]") == TimeExpression(t: -0.5, ease: EaseKind.None)
+
+      check tl.parseTimeExpression("f1[200%]") == TimeExpression(t: 10.0, ease: EaseKind.None)
+      check tl.parseTimeExpression("f1[200 %]") == TimeExpression(t: 10.0, ease: EaseKind.None)
+
+      check tl.parseTimeExpression("f1[1s]") == TimeExpression(t: 1.0, ease: EaseKind.None)
+      check tl.parseTimeExpression("f1[1 s]") == TimeExpression(t: 1.0, ease: EaseKind.None)
+
+      check tl.parseTimeExpression("f1[before]") == TimeExpression(t: -0.005, ease: EaseKind.None)
+      check tl.parseTimeExpression("f1[after]") == TimeExpression(t: 0.005, ease: EaseKind.None)

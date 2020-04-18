@@ -12,7 +12,7 @@ srcDir = "src"
 requires "nim >= 0.17.1"
 
 task test, "Runs unit tests":
-  exec "nim c -r -d:debugDsl tests/tester.nim"
+  exec "nim c -r -d:debugDsl -d:unittest tests/tester.nim"
 
 task examples, "Runs examples":
   exec "nim c -r examples/basic1.nim"

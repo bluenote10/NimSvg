@@ -1,5 +1,6 @@
 import nimsvg
 import nimsvg/styles
+import nimsvg/timeline
 
 import options
 import unittest

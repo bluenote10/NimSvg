@@ -15,33 +15,17 @@ type
 
     fontSize: Option[string]
     fontFamily: Option[string]
+    fontWeight: Option[string]
     textAnchor: Option[string]
     dominantBaseline: Option[string]
     paintOrder: Option[string]
 
     rx: Option[string]
 
-#[
-proc with*(
-  style: Style,
-  fill = style.fill,
-  stroke = style.stroke,
-  strokeWidth = style.strokeWidth,
-  fontSize = style.fontSize,
-  fontFamily = style.fontFamily,
-  textAnchor = style.textAnchor,
-  dominantBaseline = style.dominantBaseline,
-): Style =
-  Style(
-    stroke: stroke,
-    fill: fill,
-    strokeWidth: strokeWidth,
-    fontSize: fontSize,
-    fontFamily: fontFamily,
-    textAnchor: textAnchor,
-    dominantBaseline: dominantBaseline,
-  )
-]#
+    transform: Option[string]
+
+    customAttrs: seq[(string, string)]
+
 
 template makeGetterSetter(field) =
 
@@ -65,11 +49,14 @@ makeGetterSetter(strokeOpacity)
 
 makeGetterSetter(fontSize)
 makeGetterSetter(fontFamily)
+makeGetterSetter(fontWeight)
 makeGetterSetter(textAnchor)
 makeGetterSetter(dominantBaseline)
 makeGetterSetter(paintOrder)
 
 makeGetterSetter(rx)
+
+makeGetterSetter(transform)
 
 
 proc withTextAlignLeft*(s: Style): Style =
@@ -88,9 +75,14 @@ proc withPaintOrderStroke*(s: Style): Style =
   result = s
   result.paintOrder = some("stroke")
 
+proc customAttr*(s: Style, attr: string, value: string): Style =
+  ## To allow for setting attributes that are not yet covered by the explici API.
+  result = s
+  result.customAttrs.add((attr, value))
+
 
 proc getAttributes*(s: Style): seq[(string, string)] =
-  var attrs = newSeq[(string, string)]()
+  var attrs = s.customAttrs
 
   for fill in s.fill:
     attrs.add(("fill", fill))
@@ -107,6 +99,8 @@ proc getAttributes*(s: Style): seq[(string, string)] =
     attrs.add(("font-size", fontSize))
   for fontFamily in s.fontFamily:
     attrs.add(("font-family", fontFamily))
+  for fontWeight in s.fontWeight:
+    attrs.add(("font-weight", fontWeight))
   for textAnchor in s.textAnchor:
     attrs.add(("text-anchor", textAnchor))
   for dominantBaseline in s.dominantBaseline:
@@ -116,6 +110,9 @@ proc getAttributes*(s: Style): seq[(string, string)] =
 
   for rx in s.rx:
     attrs.add(("rx", rx))
+
+  for transform in s.transform:
+    attrs.add(("transform", transform))
 
   attrs
 
