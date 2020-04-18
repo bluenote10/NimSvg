@@ -12,6 +12,7 @@ type
     strokeWidth: Option[string]
     fillOpacity: Option[string]
     strokeOpacity: Option[string]
+    opacity: Option[string]
 
     fontSize: Option[string]
     fontFamily: Option[string]
@@ -46,6 +47,7 @@ makeGetterSetter(stroke)
 makeGetterSetter(strokeWidth)
 makeGetterSetter(fillOpacity)
 makeGetterSetter(strokeOpacity)
+makeGetterSetter(opacity)
 
 makeGetterSetter(fontSize)
 makeGetterSetter(fontFamily)
@@ -94,6 +96,8 @@ proc getAttributes*(s: Style): seq[(string, string)] =
     attrs.add(("fill-opacity", fillOpacity))
   for strokeOpacity in s.strokeOpacity:
     attrs.add(("stroke-opacity", strokeOpacity))
+  for opacity in s.opacity:
+    attrs.add(("opacity", opacity))
 
   for fontSize in s.fontSize:
     attrs.add(("font-size", fontSize))

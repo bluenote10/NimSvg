@@ -78,7 +78,8 @@ type
   EaseKind {.pure.} = enum
     None,
     Linear,
-    InOutCubic
+    InCubic, OutCubic, Cubic,
+    InElastic, OutElastic, Elastic,
 
   TimeExpression = object
     t: float
@@ -89,9 +90,22 @@ proc computeEase(ease: EaseKind, x: float): float =
   case ease
   of None, Linear:
     x
-  of EaseKind.InOutCubic:
+  of EaseKind.Cubic:
     if x < 0.5: 4*x*x*x else: (x-1)*(2*x-2)*(2*x-2)+1
-
+  of EaseKind.InCubic:
+    x*x*x
+  of EaseKind.OutCubic:
+    (x-1)*(x-1)*(x-1) + 1
+  of EaseKind.Elastic:
+    let t = x - 0.5
+    if t < 0.0:
+      (0.02 + 0.01 / t) * sin(50.0 * t)
+    else:
+      (0.02 - 0.01 / t) * sin(50.0 * t) + 1
+  of EaseKind.InElastic:
+    (0.04 - 0.04 / x) * sin(25.0 * x) + 1
+  of EaseKind.OutElastic:
+    0.04 * x / (x-1) * sin(25.0 * (x-1))
 
 type
   TimeRefineKind {.pure.} = enum
@@ -179,13 +193,25 @@ proc parseTimeExpression(tl: Timeline, texpr: string): TimeExpression =
 
 
   let ease =
-    case components.easeName
+    case components.easeName.toLowerAscii
     of "":
       EaseKind.None
     of "linear":
       EaseKind.Linear
     of "ease":
-      EaseKind.InOutCubic
+      EaseKind.Cubic
+    of "cubic":
+      EaseKind.Cubic
+    of "incubic":
+      EaseKind.InCubic
+    of "outcubic":
+      EaseKind.OutCubic
+    of "elastic":
+      EaseKind.Elastic
+    of "inelastic":
+      EaseKind.InElastic
+    of "outelastic":
+      EaseKind.OutElastic
     else:
       raise newException(ValueError, &"Illegal ease value: '{components.easeName}'")
 
@@ -230,7 +256,7 @@ proc calc*[T](tlf: TimelineFrame, keypoints: openArray[(string, T)]): T =
 
   # echo $T, " times: ", times, " j = ", j, " jCurr = ", jCurr, " jNext = ", jNext
 
-  if jCurr != jNext and times[jNext].ease.kind != EaseKind.None:
+  if jCurr != jNext and times[jNext].ease != EaseKind.None:
     let ease {.used.} = times[jNext].ease
     let t1 = times[jCurr].t
     let t2 = times[jNext].t
