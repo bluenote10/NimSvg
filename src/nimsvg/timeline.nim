@@ -37,7 +37,7 @@ proc frames*(frameTuples: openArray[tuple[name: string, t: float]], accumulateTi
   frames
 
 
-proc newTimeline*(frames: openArray[Frame] = [], gifFrameTime = 5): Timeline =
+proc newTimeline*(frames: openArray[Frame] = [], gifFrameTime = 2): Timeline =
   var framesTable = newTable[string, Frame]()
   for frame in frames:
     framesTable[frame.name] = frame
