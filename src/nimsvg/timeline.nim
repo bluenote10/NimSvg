@@ -9,17 +9,21 @@ import tables
 import re
 
 type
-  Frame = object
+  Frame* = object
     name: string
     t1: float
     t2: float
+
+  Frames* = seq[Frame]
 
   Timeline* = object
     gifFrameTime: int
     frames: TableRef[string, Frame]
 
+proc frame*(name: string, t1: float, t2: float): Frame =
+  Frame(name: name, t1: t1, t2: t2)
 
-proc frames*(frameTuples: openArray[tuple[name: string, t: float]], accumulateTimes = true): seq[Frame] =
+proc frames*(frameTuples: openArray[tuple[name: string, t: float]], accumulateTimes = true): Frames =
   var frames = newSeq[Frame]()
   if not accumulateTimes:
     for i in 0 ..< frameTuples.len:
@@ -268,16 +272,16 @@ proc calc*[T](tlf: TimelineFrame, keypoints: openArray[(string, T)]): T =
     return values[jCurr]
 
 
-proc buildAnimation*(tl: Timeline, filenameBase: string, builder: (tf: TimelineFrame) -> Nodes) =
+proc buildAnimationTimeline*(settings: AnimSettings, frames: Frames, builder: (tf: TimelineFrame) -> Nodes) =
+  let tl = newTimeline(frames, gifFrameTime=settings.gifFrameTime)
+
   let numFrames = (tl.getDuration() / (0.01 * tl.gifFrameTime)).ceil().int + 1
   echo "Num required frames: ", numFrames
   echo "Timeline min: ": tl.getMinMaxTime()[0]
   echo "Timeline max: ": tl.getMinMaxTime()[1]
   echo "Duration: ": tl.getDuration()
 
-  let settings = animSettings(numFrames, gifFrameTime=tl.gifFrameTime)
-
-  buildAnimation(filenameBase, settings) do (i: int) -> Nodes:
+  settings.buildAnimation(numFrames) do (i: int) -> Nodes:
     let t = tl.getTimeOfFrame(i)
     let frame = TimelineFrame(i: i, t: t, timeline: tl)
     # echo &"\ni = {frame.i}, t = {frame.t}"

@@ -56,31 +56,34 @@ proc binarySearchVis(f: TimelineFrame, xs: seq[float], y: float, frame: string):
 let durHighlight = 1.0
 let durBS = 1.0
 let durInsert = 1.0
-let tl = newTimeline(
-  frames([
+let frames = frames([
+  ("f1.init", durHighlight),
+  ("f1.bs1", durBS),
+  ("f1.bs2", durBS),
+  ("f1.insert", durInsert),
 
-    ("f1.init", durHighlight),
-    ("f1.bs1", durBS),
-    ("f1.bs2", durBS),
-    ("f1.insert", durInsert),
+  ("f2.init", durHighlight),
+  ("f2.bs1", durBS),
+  ("f2.split", 2.0),
+  ("f2.bs2", durBS),
+  ("f2.insert", durInsert),
+])
 
-    ("f2.init", durHighlight),
-    ("f2.bs1", durBS),
-    ("f2.split", 2.0),
-    ("f2.bs2", durBS),
-    ("f2.insert", durInsert),
-
-  ]),
+let settings = animSettings(
+  filenameBase="examples" / sourceBaseName(),
+  gifFrameTime=2,
+  renderGif=false,
 )
 
-tl.buildAnimation("examples" / sourceBaseName()) do (f: TimelineFrame) -> Nodes:
+settings.buildAnimationTimeline(frames) do (f: TimelineFrame) -> Nodes:
 
   let numTopElements = f.calc({
-    "f1.init": 3,
+    "f2.split": 4.0,
+    "f2.split[end] ease": 5.0,
   })
 
   proc topX(i: int): float =
-    let left = w.float / 2.0 - (numTopElements * rectW / 2.0)
+    let left = w.float / 2.0 - ((numTopElements - 1) * rectW / 2.0)
     left + i * rectW
 
 
@@ -103,6 +106,12 @@ tl.buildAnimation("examples" / sourceBaseName()) do (f: TimelineFrame) -> Nodes:
   let pos28 = {"f2.split": (botX(3, 0), botY), "f2.split[end] ease": (botX(4, 0), botY)}
   let pos32 = {"f2.split": (botX(3, 1), botY), "f2.split[end] ease": (botX(4, 1), botY)}
   let pos38 = {"f2.split": (botX(3, 2), botY), "f2.split[end] ease": (botX(4, 2), botY)}
+
+  let posGhost02 = {"f2.split": (topX(0), topY)}
+  let posGhost08 = {"f2.split": (topX(1), topY)}
+  let posGhost13 = {"f2.split[end]": (topX(2), topY)}
+  let posGhost19 = {"f2.split": (topX(2), topY), "f2.split[end] ease": (topX(3), topY)}
+  let posGhost28 = {"f2.split": (topX(3), topY), "f2.split[end] ease": (topX(4), topY)}
 
   buildSvg:
     svg(width=w, height=h):
@@ -131,18 +140,11 @@ tl.buildAnimation("examples" / sourceBaseName()) do (f: TimelineFrame) -> Nodes:
       embed styleRed.fillOpacity(maxLeafWarnOpacity*0.01).rx(8).rect(20, insertY-20, 165, 40)
       embed styleRed.withTextAlignCenter().noStroke().fontSize(10).text(20.0 + 165.0/2.0, insertY+30, "split leaf")
 
-      embed number(f.calc({
-        "f1.init": (topX(0), topY)
-      }), "2", ghost=true)
-      embed number(f.calc({
-        "f1.init": (topX(1), topY)
-      }), "8", ghost=true)
-      embed number(f.calc({
-        "f1.init": (topX(2), topY)
-      }), "19", ghost=true)
-      embed number(f.calc({
-        "f1.init": (topX(3), topY)
-      }), "28", ghost=true)
+      embed number(f.calc(posGhost02), "2", ghost=true)
+      embed number(f.calc(posGhost08), "8", ghost=true)
+      embed number(f.calc(posGhost13), "13", ghost=true, opacity=f.calc({"f2.split[50%]": 0.0, "f2.split[100%] ease": 1.0}))
+      embed number(f.calc(posGhost19), "19", ghost=true)
+      embed number(f.calc(posGhost28), "28", ghost=true)
 
       embed number(f.calc(pos02), "2")
       embed number(f.calc(pos05), "5")

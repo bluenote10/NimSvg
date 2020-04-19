@@ -4,25 +4,23 @@ import os
 import strformat
 
 
-let tl = block:
-  var tl = newTimeline(gifFrameTime=2)
-  tl.addFrame("f_all", 0, 1)
-  tl.addFrame("f1", 0.0, 0.2)
-  tl.addFrame("f2", 0.2, 0.4)
-  tl.addFrame("f3", 0.4, 0.6)
-  tl.addFrame("f4", 0.6, 0.8)
-  tl.addFrame("f5", 0.8, 1.0)
-  tl
+let frames = @[
+  frame("f_all", 0, 1),
+  frame("f1", 0.0, 0.2),
+  frame("f2", 0.2, 0.4),
+  frame("f3", 0.4, 0.6),
+  frame("f4", 0.6, 0.8),
+  frame("f5", 0.8, 1.0),
+]
 
-
-tl.buildAnimation("examples" / sourceBaseName()) do (f: TimelineFrame) -> Nodes:
+animSettings("examples" / sourceBaseName()).buildAnimationTimeline(frames) do (f: TimelineFrame) -> Nodes:
   let w = 200
   let h = 200
   buildSvg:
     svg(width=w, height=h):
-      let (x1, x2) = f.calc({"f2 s": (20.0, 40.0), "f4 e ease": (100.0, 60.0)})
-      let r1 = f.calc({"f2 s": 10.0, "f4 s": 20.0})
-      let r2 = f.calc({"f1 s": 1.0, "f2 s": 2.0, "f3 s": 3.0, "f4 s": 4.0, "f5 s": 5.0})
+      let (x1, x2) = f.calc({"f2": (20.0, 40.0), "f4[end] ease": (100.0, 60.0)})
+      let r1 = f.calc({"f2": 10.0, "f4": 20.0})
+      let r2 = f.calc({"f1": 1.0, "f2": 2.0, "f3": 3.0, "f4": 4.0, "f5": 5.0})
       call:
         echo "r1 = ", r1
         echo "r2 = ", r2

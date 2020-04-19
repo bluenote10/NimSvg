@@ -7,7 +7,7 @@ Nim-based DSL allowing to generate SVG files and GIF animations.
 NimSvg is inspired by [Karax](https://github.com/pragmagic/karax), and offers a similar DSL to generate SVG trees.
 A simple hello world
 
-```nimrod
+```nim
 import nimsvg
 
 buildSvgFile("examples/basic1.svg"):
@@ -32,10 +32,10 @@ Output:
 The DSL allows to mix tag expressions with regular Nim expressions like variable definitions, for loops, or if statements,
 which makes it easy to generate SVGs programmatically:
 
-```nimrod
-import nimsvg, ospaths, random
+```nim
+import nimsvg, random
 
-buildSvgFile("examples" / sourceBaseName() & ".svg"):
+buildSvgFile("random_circles.svg"):
   let size = 200
   svg(width=size, height=size):
     for _ in 0 .. 1000:
@@ -51,12 +51,13 @@ Output:
 
 NimSvg also allows to render a sequence of SVG files into an animated GIF (requires Imagemagick for the rendering):
 
-```nimrod
-import nimsvg, os
+```nim
+import nimsvg
 
-let settings = animSettings(numFrames=100, backAndForth=true)
+let settings = animSettings("filenameBase", backAndForth=true)
+let numFrames = 100
 
-buildAnimation("examples" / sourceBaseName(), settings) do (i: int) -> Nodes:
+settings.buildAnimation(numFrames) do (i: int) -> Nodes:
   let w = 200
   let h = 200
   buildSvg:

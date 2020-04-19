@@ -1,8 +1,10 @@
 import nimsvg, os, math
 
-let settings = animSettings(numFrames=100)
+let settings = animSettings("examples" / sourceBaseName())
+let numFrames = 100
 
-buildAnimation("examples" / sourceBaseName(), settings) do (frame: int) -> Nodes:
+
+settings.buildAnimation(numFrames) do (frame: int) -> Nodes:
   let w = 200
   let h = 200
   let centerX = w / 2
@@ -23,7 +25,7 @@ buildAnimation("examples" / sourceBaseName(), settings) do (frame: int) -> Nodes
           feBlend(`in`="SourceGraphic", in2="blurOut", mode="normal")
       rect(x=0, y=0, width=w, height=h, fill="#1F1D1D")
       block:
-        let alpha = - frame / settings.numFrames * 2 * PI
+        let alpha = - frame / numFrames * 2 * PI
         let x = centerX + circleRadius * sin(alpha)
         let y = centerY + circleRadius * cos(alpha)
         circle(
@@ -31,7 +33,7 @@ buildAnimation("examples" / sourceBaseName(), settings) do (frame: int) -> Nodes
           filter="url(#shadow)"
         )
       block:
-        let alpha = - frame*2 / settings.numFrames * 2 * PI
+        let alpha = - frame*2 / numFrames * 2 * PI
         let x = centerX + circleRadius * sin(alpha) * 0.9
         let y = centerY + circleRadius * cos(alpha) * 0.9
         circle(
@@ -39,7 +41,7 @@ buildAnimation("examples" / sourceBaseName(), settings) do (frame: int) -> Nodes
           filter="url(#shadow)"
         )
       block:
-        let alpha = - frame*3 / settings.numFrames * 2 * PI
+        let alpha = - frame*3 / numFrames * 2 * PI
         let x = centerX + circleRadius * sin(alpha) * 1.1
         let y = centerY + circleRadius * cos(alpha) * 1.1
         circle(

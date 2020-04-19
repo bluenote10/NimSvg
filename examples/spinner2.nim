@@ -1,8 +1,9 @@
 import nimsvg, os, math
 
-let settings = animSettings(numFrames=40)
+let settings = animSettings("examples" / sourceBaseName())
+let numFrames = 40
 
-buildAnimation("examples" / sourceBaseName(), settings) do (frame: int) -> Nodes:
+settings.buildAnimation(numFrames) do (frame: int) -> Nodes:
   let w = 200
   let h = 200
   let centerX = w / 2
@@ -14,7 +15,7 @@ buildAnimation("examples" / sourceBaseName(), settings) do (frame: int) -> Nodes
     svg(width=w, height=h, baseProfile="full"):
       for i in 0 ..< numTicks:
         let alpha = i / numTicks * 2 * PI
-        let peakIndex = 1.0 - frame / settings.numFrames
+        let peakIndex = 1.0 - frame / numFrames
         let frac = i / numTicks
         let dist = [
           abs(peakIndex - frac),

@@ -329,25 +329,28 @@ template buildSvgFile*(filename: string, body: untyped): untyped =
 
 type
   AnimSettings* = object
-    numFrames*: int
+    filenameBase*: string
     renderGif*: bool
     gifFrameTime*: int
     backAndForth*: bool
 
 
 proc animSettings*(
-  numFrames: int,
+  filenameBase: string,
   renderGif: bool = false,
   gifFrameTime: int = 5,
   backAndForth: bool = false,
 ): AnimSettings =
   AnimSettings(
-    numFrames: numFrames,
+    filenameBase: filenameBase,
+    renderGif: renderGif,
     gifFrameTime: gifFrameTime,
     backAndForth: backAndForth,
   )
 
-proc buildAnimation*(filenameBase: string, settings: AnimSettings, builder: int -> Nodes) =
+proc buildAnimation*(settings: AnimSettings, numFrames: int, builder: int -> Nodes) =
+  let filenameBase = settings.filenameBase
+
   createDir(filenameBase & "_frames")
   let filenameOnly = filenameBase.splitFile().name
 
@@ -356,7 +359,7 @@ proc buildAnimation*(filenameBase: string, settings: AnimSettings, builder: int 
 
   var htmlWriter = HtmlWriter()
 
-  for i in 0 ..< settings.numFrames:
+  for i in 0 ..< numFrames:
     let filename = svgFrameFileName(align($i, 4, '0'))
     let nodes = builder(i)
     let svgCode = nodes.render()
