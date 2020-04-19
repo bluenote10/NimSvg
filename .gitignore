@@ -7,3 +7,5 @@ nimcache
 .DS_Store
 
 *_frame_*.svg
+
+examples/*.html

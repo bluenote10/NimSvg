@@ -129,6 +129,10 @@ proc text*(s: Style, x: float, y: float, text: string): Nodes =
       y=y,
     ): t(text)
 
+proc line*(s: Style, x1, y1, x2, y2: float): Nodes =
+  buildSvg:
+    line(... s.getAttributes(), x1=x1, y1=y1, x2=x2, y2=y2)
+
 proc rect*(s: Style, x: float, y: float, w: float, h: float): Nodes =
   buildSvg:
     rect(... s.getAttributes(), x=x, y=y, width=w, height=h)
