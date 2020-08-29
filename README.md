@@ -1,4 +1,4 @@
-# NimSvg  [![Build Status](https://travis-ci.org/bluenote10/NimSvg.svg?branch=master)](https://travis-ci.org/bluenote10/NimSvg)
+# NimSvg  ![Build Status](https://github.com/bluenote10/NimSvg/workflows/ci/badge.svg)
 
 Nim-based DSL allowing to generate SVG files and GIF animations.
 
