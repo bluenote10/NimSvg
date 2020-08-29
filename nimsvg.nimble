@@ -1,6 +1,6 @@
 # Package
 
-version       = "0.1.0"
+version       = "0.2.0"
 author        = "Fabian Keller"
 description   = "Nim-based DSL allowing to generate SVG files and GIF animations."
 license       = "MIT"
@@ -9,7 +9,7 @@ license       = "MIT"
 
 srcDir = "src"
 
-requires "nim >= 0.17.1"
+requires "nim >= 1.2"
 
 task test, "Runs unit tests":
   exec "nim c -r -d:debugDsl -d:unittest tests/tester.nim"

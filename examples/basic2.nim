@@ -1,5 +1,7 @@
 import nimsvg, ospaths, random
 
+randomize(1)
+
 buildSvgFile("examples" / sourceBaseName() & ".svg"):
   let size = 200
   svg(width=size, height=size):
