@@ -1,0 +1,24 @@
+name: build
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        nim: ['1.2.0', 'devel']
+    name: Nim ${{ matrix.nim }} sample
+
+    steps:
+      - uses: actions/checkout@master
+      - name: Setup nim
+        uses: jiro4989/setup-nim-action@v1
+        with:
+          nim-version: ${{ matrix.nim }}
+
+      - name: nimble test
+        run: nimble test
+
+      - name: nimble examples
+        run: nimble examples
