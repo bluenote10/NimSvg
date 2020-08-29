@@ -12,7 +12,7 @@ import nimsvg
 
 buildSvgFile("examples/basic1.svg"):
   svg(width=200, height=200):
-    circle(cx=100, cy=100, r=80, stroke="teal", `stroke-width`=4, fill="#DDD")
+    circle(cx=100, cy=100, r=80, stroke="teal", `stroke-width`=4, fill="#EEF")
 ```
 
 produces the following SVG:
@@ -21,7 +21,7 @@ produces the following SVG:
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <svg width="200" height="200">
-  <circle cx="100" cy="100" r="80" stroke="teal" stroke-width="4" fill="#DDD"/>
+  <circle cx="100" cy="100" r="80" stroke="teal" stroke-width="4" fill="#EEF"/>
 </svg>
 ```
 
@@ -35,7 +35,7 @@ which makes it easy to generate SVGs programmatically:
 ```nim
 import nimsvg, random
 
-buildSvgFile("random_circles.svg"):
+buildSvgFile("examples/basic2.svg"):
   let size = 200
   svg(width=size, height=size):
     for _ in 0 .. 1000:

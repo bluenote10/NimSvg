@@ -1,0 +1,1 @@
+withFile	nimsvg/utils.html#withFile.t,untyped,untyped,untyped	utils: withFile(f, fn, body: untyped): untyped	

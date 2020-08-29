@@ -1,0 +1,3 @@
+HtmlWriter	nimsvg/html_writer.html#HtmlWriter	html_writer: HtmlWriter	
+addFrame	nimsvg/html_writer.html#addFrame,HtmlWriter,string	html_writer: addFrame(self: var HtmlWriter; svgCode: string)	
+writeHtml	nimsvg/html_writer.html#writeHtml,HtmlWriter,string	html_writer: writeHtml(self: HtmlWriter; filename: string)	

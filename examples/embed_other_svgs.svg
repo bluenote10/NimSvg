@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg" version="1.1">
+  <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg" version="1.1">
+  <circle cx="100" cy="100" r="80" stroke="teal" stroke-width="4" fill="#EEF"/>
+</svg>
+
+  <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg" version="1.1">
   <circle cx="96" cy="152" r="0" stroke="#111122" fill="#E0E0F0" fill-opacity="0.5"/>
   <circle cx="75" cy="185" r="4" stroke="#111122" fill="#E0E0F0" fill-opacity="0.5"/>
   <circle cx="21" cy="12" r="0" stroke="#111122" fill="#E0E0F0" fill-opacity="0.5"/>
@@ -1002,4 +1007,6 @@
   <circle cx="10" cy="177" r="4" stroke="#111122" fill="#E0E0F0" fill-opacity="0.5"/>
   <circle cx="94" cy="173" r="3" stroke="#111122" fill="#E0E0F0" fill-opacity="0.5"/>
   <circle cx="145" cy="160" r="1" stroke="#111122" fill="#E0E0F0" fill-opacity="0.5"/>
+</svg>
+
 </svg>

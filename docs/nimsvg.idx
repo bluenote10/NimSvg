@@ -1,0 +1,16 @@
+Node	nimsvg.html#Node	nimsvg: Node	
+Nodes	nimsvg.html#Nodes	nimsvg: Nodes	
+newNode	nimsvg.html#newNode,string	nimsvg: newNode(tag: string): Node	
+newNode	nimsvg.html#newNode,string,Nodes	nimsvg: newNode(tag: string; children: Nodes): Node	
+newNode	nimsvg.html#newNode,string,Attributes	nimsvg: newNode(tag: string; attributes: Attributes): Node	
+render	nimsvg.html#render,Nodes,int	nimsvg: render(nodes: Nodes; indent: int = 0): string	
+`$`	nimsvg.html#$,Node	nimsvg: `$`(n: Node): string	
+`$`	nimsvg.html#$,Nodes	nimsvg: `$`(nodes: Nodes): string	
+`==`	nimsvg.html#==,Node,Node	nimsvg: `==`(a, b: Node): bool	
+buildSvg	nimsvg.html#buildSvg.m,untyped	nimsvg: buildSvg(body: untyped): Nodes	
+buildSvgFile	nimsvg.html#buildSvgFile.t,string,untyped	nimsvg: buildSvgFile(filename: string; body: untyped): untyped	
+AnimSettings	nimsvg.html#AnimSettings	nimsvg: AnimSettings	
+animSettings	nimsvg.html#animSettings,string,bool,int,bool	nimsvg: animSettings(filenameBase: string; renderGif: bool = false; gifFrameTime: int = 5;\n             backAndForth: bool = false): AnimSettings	
+buildAnimation	nimsvg.html#buildAnimation,AnimSettings,int,	nimsvg: buildAnimation(settings: AnimSettings; numFrames: int; builder: int -&gt; Nodes)	
+sourceBaseName	nimsvg.html#sourceBaseName.t	nimsvg: sourceBaseName(): string	
+loadSVG	nimsvg.html#loadSVG,string	nimsvg: loadSVG(filename: string): Nodes	

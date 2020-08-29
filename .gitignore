@@ -9,3 +9,8 @@ nimcache
 *_frame_*.svg
 
 examples/*.html
+examples/*_frames/
+
+examples/timeline_ex1.gif
+examples/timeline_ex2.gif
+
