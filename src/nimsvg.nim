@@ -400,4 +400,11 @@ proc buildAnimation*(settings: AnimSettings, numFrames: int, builder: int -> Nod
 template sourceBaseName*(): string =
   instantiationInfo().filename.splitFile().name
 
+proc loadSVG*(filename: string): Nodes =
+  ## Helper function that allows to embed existing SVG files.
+  let content = readFile(filename)
+  let offsetSvgTag = content.find("<svg")
+  let contentStripped = content[offsetSvgTag..^1]
+  buildSvg:
+    t contentStripped
 

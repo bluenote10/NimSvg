@@ -25,6 +25,7 @@ task examples, "Runs examples":
   exec "nim c -r examples/dsl_demo.nim"
   exec "nim c -r examples/timeline_ex1.nim"
   exec "nim c -r examples/timeline_ex2.nim"
+  exec "nim c -r examples/embed_other_svgs.nim"
 
 task docs, "Generates docs":
   exec "nim doc2 --project --docSeeSrcUrl:https://github.com/bluenote10/NimSvg/blob/master -o:./docs/ src/nimsvg.nim"
