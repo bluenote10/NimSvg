@@ -1,6 +1,13 @@
-name: build
+# https://docs.github.com/en/actions/configuring-and-managing-workflows/configuring-a-workflow
+# https://github.com/jiro4989/setup-nim-action
 
-on: [push]
+name: ci
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '0 0 * * 0' # at 00:00 every Sunday
 
 jobs:
   build:
@@ -8,10 +15,11 @@ jobs:
     strategy:
       matrix:
         nim: ['1.2.0', 'devel']
-    name: Nim ${{ matrix.nim }} sample
+    name: Nim ${{ matrix.nim }}
 
     steps:
       - uses: actions/checkout@master
+
       - name: Setup nim
         uses: jiro4989/setup-nim-action@v1
         with:
