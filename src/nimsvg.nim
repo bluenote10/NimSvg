@@ -398,7 +398,15 @@ proc buildAnimation*(settings: AnimSettings, numFrames: int, builder: int -> Nod
 # -----------------------------------------------------------------------------
 
 template sourceBaseName*(): string =
+  bind splitFile
   instantiationInfo().filename.splitFile().name
+
+template sourceToSvgPath*(prefix: string = ""): string =
+  bind splitFile
+  if prefix.len == 0:
+    (instantiationInfo().filename.splitFile().name & ".svg")
+  else:
+    prefix / (instantiationInfo().filename.splitFile().name & ".svg")
 
 proc loadSVG*(filename: string): Nodes =
   ## Helper function that allows to embed existing SVG files.
