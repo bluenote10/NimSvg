@@ -317,10 +317,11 @@ proc ensureParentDirExists(filename: string) =
 
 
 template buildSvgFile*(filename: string, body: untyped): untyped =
-  ensureParentDirExists(filename)
-  let nodes = buildSvg(body)
-  withFile(f, filename):
-    f.write(nodes.render())
+  block:  # to avoid leaking f
+    ensureParentDirExists(filename)
+    let nodes = buildSvg(body)
+    withFile(f, filename):
+      f.write(nodes.render())
 
 
 # -----------------------------------------------------------------------------

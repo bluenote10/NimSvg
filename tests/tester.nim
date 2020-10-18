@@ -220,6 +220,13 @@ suite "buildSvgFile":
     buildSvgFile("test.svg"):
       svg(width=100, height=100)
 
+  test "multiple calls possible":
+    setCurrentDir(getTempDir() / "nimSvgTest")
+    buildSvgFile("test.svg"):
+      svg(width=100, height=100)
+    buildSvgFile("test.svg"):
+      svg(width=100, height=100)
+
 
 suite "styles":
 
