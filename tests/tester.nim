@@ -207,6 +207,12 @@ suite "buildSvg":
       ]
       verify(svg, exp)
 
+  test "Doc comments":
+    let svg = buildSvg:
+      ## some comment
+      g()
+    let exp = @[newNode("g")]
+    verify(svg, exp)
 
 suite "buildSvgFile":
 

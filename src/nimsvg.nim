@@ -269,9 +269,7 @@ proc buildNodes(body: NimNode, level: int): NimNode =
     for i in 1 ..< n.len:
       result.add buildNodes(n[i], level+1)
 
-  of nnkVarSection, nnkLetSection, nnkConstSection:
-    result = n
-  of nnkInfix:
+  of nnkInfix, nnkVarSection, nnkLetSection, nnkConstSection, nnkCommentStmt:
     result = n
 
   else:
