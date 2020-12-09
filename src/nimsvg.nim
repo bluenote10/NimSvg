@@ -273,7 +273,8 @@ proc buildNodes(body: NimNode, level: int): NimNode =
     result = n
   of nnkInfix:
     result = n
-
+  of nnkCommentStmt:
+    result = n
   else:
     error "Unhandled node kind: " & $n.kind & "\n" & n.repr
 

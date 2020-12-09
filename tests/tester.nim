@@ -207,6 +207,18 @@ suite "buildSvg":
       ]
       verify(svg, exp)
 
+  test "comments allowed and ignored":
+    let svg = buildSvg:
+      text:
+        #[ This is a comment
+        multiline]#
+        t "asdf"
+    let exp = @[
+      newNode("text", @[
+        newNode("#text", @{"text": "asdf"}),
+      ])
+    ]
+    verify(svg, exp)
 
 suite "buildSvgFile":
 
