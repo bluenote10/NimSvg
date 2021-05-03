@@ -214,6 +214,21 @@ suite "buildSvg":
     let exp = @[newNode("g")]
     verify(svg, exp)
 
+  test "Hygiene w.r.t. `nodes`":
+    type MyNode = ref object
+      x: float
+      y: float
+
+    let nodes = @[MyNode(x: 0.1, y: 0.2), MyNode(x: 0.3, y: 0.4)]
+
+    buildSvgFile("tests/foobar.svg"):
+      svg():
+        for n in nodes:
+          let x = n.x
+          let y = n.y
+          circle(cx = x, cy = y)
+
+
 suite "buildSvgFile":
 
   test "path handling (1)":
