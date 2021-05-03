@@ -182,30 +182,30 @@ proc dummyTextAttributes(text: NimNode): NimNode =
 proc buildNodesBlock(body: NimNode, level: int): NimNode
 
 
-proc buildNodes(body: NimNode, level: int): NimNode =
+proc buildNodes(nodesSym: NimNode, body: NimNode, level: int): NimNode =
 
   # TODO we could probably simplify these three templates into one?
-  template appendElement(tmp, tag, attrs, childrenBlock) {.dirty.} =
+  template appendElement(nodesSym, tmp, tag, attrs, childrenBlock) =
     bind newNode
     let tmp = newNode(tag)
-    nodes.add(tmp)
+    nodesSym.add(tmp)
     tmp.attributes = attrs
     tmp.children = childrenBlock
 
-  template appendElementNoChilren(tmp, tag, attrs) {.dirty.} =
+  template appendElementNoChilren(nodesSym, tmp, tag, attrs) =
     bind newNode
     let tmp = newNode(tag)
-    nodes.add(tmp)
+    nodesSym.add(tmp)
     tmp.attributes = attrs
 
-  template appendElementNoChilrenNoAttrs(tmp, tag) {.dirty.} =
+  template appendElementNoChilrenNoAttrs(nodesSym, tmp, tag) =
     bind newNode
     let tmp = newNode(tag)
-    nodes.add(tmp)
+    nodesSym.add(tmp)
 
-  template embedSeq(nodesSeqExpr) {.dirty.} =
+  template embedSeq(nodesSym, nodesSeqExpr)  =
     for node in nodesSeqExpr:
-      nodes.add(node)
+      nodesSym.add(node)
 
   let n = copyNimTree(body)
   # echo level, " ", n.kind
@@ -218,14 +218,14 @@ proc buildNodes(body: NimNode, level: int): NimNode =
     let tagStr = $(n[0])
     if tagStr == "embed":
       let nodesSeqExpr = n[1]
-      result = getAst(embedSeq(nodesSeqExpr))
+      result = getAst(embedSeq(nodesSym, nodesSeqExpr))
     elif tagStr == "call":
       result = n[1]
     elif tagStr == "t":
       let tmp = genSym(nskLet, "tmp")
       let tag = newStrLitNode("#text")
       let attributes = dummyTextAttributes(n[1])
-      result = getAst(appendElementNoChilren(tmp, tag, attributes))
+      result = getAst(appendElementNoChilren(nodesSym, tmp, tag, attributes))
     else:
       let tmp = genSym(nskLet, "tmp")
       let tag = newStrLitNode(tagStr)
@@ -235,16 +235,16 @@ proc buildNodes(body: NimNode, level: int): NimNode =
       # echo attributes.repr
       if n.len >= 2 and n[^1].kind == nnkStmtList:
         let childrenBlock = buildNodesBlock(n[^1], level+1)
-        result = getAst(appendElement(tmp, tag, attributes, childrenBlock))
+        result = getAst(appendElement(nodesSym, tmp, tag, attributes, childrenBlock))
       else:
-        result = getAst(appendElementNoChilren(tmp, tag, attributes))
+        result = getAst(appendElementNoChilren(nodesSym, tmp, tag, attributes))
 
   of nnkIdent:
     # Currently a single ident is treated as an empty tag. Not sure if
     # there more important use cases. Maybe `embed` them?
     let tmp = genSym(nskLet, "tmp")
     let tag = newStrLitNode($n)
-    result = getAst(appendElementNoChilrenNoAttrs(tmp, tag))
+    result = getAst(appendElementNoChilrenNoAttrs(nodesSym, tmp, tag))
 
   of nnkForStmt, nnkIfExpr, nnkElifExpr, nnkElseExpr,
       nnkOfBranch, nnkElifBranch, nnkExceptBranch, nnkElse,
@@ -253,21 +253,21 @@ proc buildNodes(body: NimNode, level: int): NimNode =
     result = copyNimTree(n)
     let L = n.len
     if L > 0:
-      result[L-1] = buildNodes(result[L-1], level+1)
+      result[L-1] = buildNodes(nodesSym, result[L-1], level+1)
 
   of nnkStmtList, nnkStmtListExpr, nnkWhenStmt, nnkIfStmt, nnkTryStmt,
       nnkFinally:
     # recurse for every child:
     result = copyNimNode(n)
     for x in n:
-      result.add buildNodes(x, level+1)
+      result.add buildNodes(nodesSym, x, level+1)
 
   of nnkCaseStmt:
     # recurse for children, but don't add call for case ident
     result = copyNimNode(n)
     result.add n[0]
     for i in 1 ..< n.len:
-      result.add buildNodes(n[i], level+1)
+      result.add buildNodes(nodesSym, n[i], level+1)
 
   of nnkInfix, nnkVarSection, nnkLetSection, nnkConstSection, nnkCommentStmt:
     result = n
@@ -279,16 +279,18 @@ proc buildNodes(body: NimNode, level: int): NimNode =
 
 
 proc buildNodesBlock(body: NimNode, level: int): NimNode =
+  let nodesSym = genSym(nskVar, "nodes")
+
   ## This proc finializes the node building by wrapping everything
   ## in a block which provides and returns the `nodes` variable.
-  template resultTemplate(elementBuilder) {.dirty.} =
+  template resultTemplate(nodesSym, elementBuilder) =
     block:
-      var nodes = newSeq[Node]()
+      var nodesSym = newSeq[Node]()
       elementBuilder
-      nodes
+      nodesSym
 
-  let elements = buildNodes(body, level)
-  result = getAst(resultTemplate(elements))
+  let elements = buildNodes(nodesSym, body, level)
+  result = getAst(resultTemplate(nodesSym, elements))
   when defined(debugDsl):
     if level == 0:
       echo " --------- output ----------- "
