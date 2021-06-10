@@ -97,9 +97,8 @@ Output:
 
 Click on an image to see the corresponding implementation.
 
-| | | |
-:-------------------------:|:-------------------------:|:-------------------------:
 [![spinner1](examples/spinner1.gif)](examples/spinner1.nim)  |  [![spinner2](examples/spinner2.gif)](examples/spinner2.nim)   | [![spinner3](examples/spinner3.gif)](examples/spinner3.nim)
+:-------------------------:|:-------------------------:|:-------------------------:
 
 Example algorithm visualization of [rust-array-stump](https://github.com/bluenote10/rust-array-stump):
 
