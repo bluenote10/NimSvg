@@ -77,7 +77,8 @@ proc render*(nodes: Nodes, indent: int = 0): string =
         # semantics, because the "... attributes" syntax prepends other manually specified
         # attributes that should have precedence.
         result &= " "
-        result &= $attributes.map(attr => attr[0] & "=\"" & attr[1] & "\"").join(" ")
+        result &= $attributes.map(attr => attr[0] & "=\"" & attr[1] &
+            "\"").join(" ")
 
       if n.children.len > 0:
         result &= ">\n"
@@ -203,7 +204,7 @@ proc buildNodes(nodesSym: NimNode, body: NimNode, level: int): NimNode =
     let tmp = newNode(tag)
     nodesSym.add(tmp)
 
-  template embedSeq(nodesSym, nodesSeqExpr)  =
+  template embedSeq(nodesSym, nodesSeqExpr) =
     for node in nodesSeqExpr:
       nodesSym.add(node)
 
@@ -235,7 +236,8 @@ proc buildNodes(nodesSym: NimNode, body: NimNode, level: int): NimNode =
       # echo attributes.repr
       if n.len >= 2 and n[^1].kind == nnkStmtList:
         let childrenBlock = buildNodesBlock(n[^1], level+1)
-        result = getAst(appendElement(nodesSym, tmp, tag, attributes, childrenBlock))
+        result = getAst(appendElement(nodesSym, tmp, tag, attributes,
+            childrenBlock))
       else:
         result = getAst(appendElementNoChilren(nodesSym, tmp, tag, attributes))
 
@@ -305,23 +307,23 @@ macro buildSvg*(body: untyped): Nodes =
     echo " --------- input ----------- "
     echo body.treeRepr
 
-  let kids = newProc(procType=nnkDo, body=body)
+  let kids = newProc(procType = nnkDo, body = body)
   expectKind kids, nnkDo
   result = buildNodesBlock(body(kids), 0)
 
+when not defined(js):
+  proc ensureParentDirExists(filename: string) =
+    let parent = parentDir(filename)
+    if parent != "":
+      createDir(parent)
 
-proc ensureParentDirExists(filename: string) =
-  let parent = parentDir(filename)
-  if parent != "":
-    createDir(parent)
 
-
-template buildSvgFile*(filename: string, body: untyped): untyped =
-  block:  # to avoid leaking f
-    ensureParentDirExists(filename)
-    let nodes = buildSvg(body)
-    withFile(f, filename):
-      f.write(nodes.render())
+  template buildSvgFile*(filename: string, body: untyped): untyped =
+    block: # to avoid leaking f
+      ensureParentDirExists(filename)
+      let nodes = buildSvg(body)
+      withFile(f, filename):
+        f.write(nodes.render())
 
 
 # -----------------------------------------------------------------------------
@@ -349,71 +351,73 @@ proc animSettings*(
     backAndForth: backAndForth,
   )
 
-proc buildAnimation*(settings: AnimSettings, numFrames: int, builder: int -> Nodes) =
-  let filenameBase = settings.filenameBase
 
-  createDir(filenameBase & "_frames")
-  let filenameOnly = filenameBase.splitFile().name
+when not defined(js):
+  proc buildAnimation*(settings: AnimSettings, numFrames: int, builder: int -> Nodes) =
+    let filenameBase = settings.filenameBase
 
-  proc svgFrameFileName(suffix: string): string =
-    filenameBase & "_frames" / filenameOnly & "_frame_" & suffix & ".svg"
+    createDir(filenameBase & "_frames")
+    let filenameOnly = filenameBase.splitFile().name
 
-  var htmlWriter = HtmlWriter()
+    proc svgFrameFileName(suffix: string): string =
+      filenameBase & "_frames" / filenameOnly & "_frame_" & suffix & ".svg"
 
-  for i in 0 ..< numFrames:
-    let filename = svgFrameFileName(align($i, 4, '0'))
-    let nodes = builder(i)
-    let svgCode = nodes.render()
-    withFile(f, filename):
-      f.write(svgCode)
-    htmlWriter.addFrame(svgCode)
+    var htmlWriter = HtmlWriter()
 
-  htmlWriter.writeHtml(filenameBase & ".html")
+    for i in 0 ..< numFrames:
+      let filename = svgFrameFileName(align($i, 4, '0'))
+      let nodes = builder(i)
+      let svgCode = nodes.render()
+      withFile(f, filename):
+        f.write(svgCode)
+      htmlWriter.addFrame(svgCode)
 
-  if settings.renderGif:
-    let pattern = svgFrameFileName("*")
-    let outFile = filenameBase & ".gif"
+    htmlWriter.writeHtml(filenameBase & ".html")
 
-    var cmdElems = @[
-      "convert",
-      "-delay", $settings.gifFrameTime,
-      "-loop", "0",
-      "-dispose", "previous",
-      pattern
-    ]
-    if settings.backAndForth:
-      cmdElems &= @[
-        "-reverse",
+    if settings.renderGif:
+      let pattern = svgFrameFileName("*")
+      let outFile = filenameBase & ".gif"
+
+      var cmdElems = @[
+        "convert",
+        "-delay", $settings.gifFrameTime,
+        "-loop", "0",
+        "-dispose", "previous",
         pattern
       ]
-    cmdElems &= outfile
+      if settings.backAndForth:
+        cmdElems &= @[
+          "-reverse",
+          pattern
+        ]
+      cmdElems &= outfile
 
-    let cmd = cmdElems.join(" ")
+      let cmd = cmdElems.join(" ")
 
-    echo "Running: ", cmd
-    discard execShellCmd(cmd)
+      echo "Running: ", cmd
+      discard execShellCmd(cmd)
 
 
 # -----------------------------------------------------------------------------
 # Misc utils
 # -----------------------------------------------------------------------------
+when not defined(js):
+  template sourceBaseName*(): string =
+    bind splitFile
+    instantiationInfo().filename.splitFile().name
 
-template sourceBaseName*(): string =
-  bind splitFile
-  instantiationInfo().filename.splitFile().name
+  template sourceToSvgPath*(prefix: string = ""): string =
+    bind splitFile
+    if prefix.len == 0:
+      (instantiationInfo().filename.splitFile().name & ".svg")
+    else:
+      prefix / (instantiationInfo().filename.splitFile().name & ".svg")
 
-template sourceToSvgPath*(prefix: string = ""): string =
-  bind splitFile
-  if prefix.len == 0:
-    (instantiationInfo().filename.splitFile().name & ".svg")
-  else:
-    prefix / (instantiationInfo().filename.splitFile().name & ".svg")
-
-proc loadSVG*(filename: string): Nodes =
-  ## Helper function that allows to embed existing SVG files.
-  let content = readFile(filename)
-  let offsetSvgTag = content.find("<svg")
-  let contentStripped = content[offsetSvgTag..^1]
-  buildSvg:
-    t contentStripped
+  proc loadSVG*(filename: string): Nodes =
+    ## Helper function that allows to embed existing SVG files.
+    let content = readFile(filename)
+    let offsetSvgTag = content.find("<svg")
+    let contentStripped = content[offsetSvgTag..^1]
+    buildSvg:
+      t contentStripped
 
