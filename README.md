@@ -106,8 +106,9 @@ Example algorithm visualization of [rust-array-stump](https://github.com/bluenot
 
 ## JS
 
-Compile to JS `nim js yourfile.nim` 
+Compile to JS `nim js main.nim` 
 
+main.nim:
 ```nim
 import nimsvg
 import std/dom
@@ -116,8 +117,28 @@ proc makeSVG(){.exportc.} =
   let x = buildSvg:
     svg(width = 200, height = 200):
       circle(cx = 100, cy = 100, r = 80, stroke = "teal", `stroke-width` = 4, fill = "#EEF")
-  echo $x.render()
   document.getElementById("SVG").innerHTML = x.render()
+```
+
+index.html:
+```html
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>SVG</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+  <div id="SVG"></div>
+  <button onclick="makeSVG()">make svg</button>
+  <script src="main.js" async defer></script>
+</body>
+
+</html>
 ```
 
 Currently does not support features that require file access.
