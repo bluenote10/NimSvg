@@ -103,3 +103,21 @@ Click on an image to see the corresponding implementation.
 Example algorithm visualization of [rust-array-stump](https://github.com/bluenote10/rust-array-stump):
 
 [![algo-viz-1](https://raw.githubusercontent.com/bluenote10/rust-array-stump/master/docs/algorithm_visualization.gif)](examples/timeline_ex2.nim)
+
+## JS
+
+Compile to JS `nim js yourfile.nim` 
+
+```nim
+import nimsvg
+import std/dom
+
+proc makeSVG(){.exportc.} =
+  let x = buildSvg:
+    svg(width = 200, height = 200):
+      circle(cx = 100, cy = 100, r = 80, stroke = "teal", `stroke-width` = 4, fill = "#EEF")
+  echo $x.render()
+  document.getElementById("SVG").innerHTML = x.render()
+```
+
+Currently does not support features that require file access.
